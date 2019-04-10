@@ -1,0 +1,48 @@
+1. скопировать скрипт c:\adv\exchange\processor.pl
+
+2. установить Activestate perl
+
+3. скопировать библиотеку Iso8601.pm  в c:\perl64\site\lib
+
+4. в z:\HTML\ положить 5 файлов *.css *.js
+
+5. идем на первый сервер и делаем маунты
+mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //172.17.72.13/from_virt /mnt/from_virt2/
+mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //172.17.72.13/HTML /mnt/HTML2/
+mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //172.17.72.13/backup_db /mnt/backup_db2
+
+6.  выгрузка конфига
+http://joxi.ru/Q2KbZjEULLNKRm
+
+7. создать директории
+z:\from_virt\exchange/channels
+z:\from_virt\exchange/containers
+z:\from_virt\exchange/debug
+z:\from_virt\exchange/tatbles
+
+8. запустить скрипт perl c:\adv\exchnage\processor.pl убедиться что генерируется пустой мониторинг https://monosnap.com/file/5WhYRuQ1Tce5vqbns9eUj307ppLhuz
+
+9. выгрузить все расписания всех каналов
+https://monosnap.com/file/YEanMvYr22kSxJEKWdnUuDIi4Q9ih1
+
+10. запустить скрипт, убедиться что плейлисты собираются
+https://monosnap.com/file/eyZajWkTWQv1u89d9eDSYHw6OjZmog
+
+11. проверить выгружаемость плейлистов
+https://monosnap.com/file/A1yKQJ8WepZRk76j5GOxZInxrTkPQQ
+
+12. создать дебаг и лог директории
+z:\html\debug
+z:\html\log
+
+13. проверить запскаемость скрипта в debug режиме
+perl c:\adv\exchnage\processor.pl --debug
+псоле нескольких запусков в деьаг директории появятся файлы  clf и vic
+https://monosnap.com/file/h8zOIeAJchnUpXZ3ad1s7J0BMF7cyc
+
+
+14. настроить задачу на ежеминутный запуск
+cmd /c perl c:\adv\exchnage\processor.pl --debug >> z:\HTML\log\processor.log 2>&1
+
+15. проверить что задача выполняется периодически, проверить лог
+https://monosnap.com/file/jAegCHQhJfmbk09g9IdZlyRWcpSro9
