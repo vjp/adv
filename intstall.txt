@@ -50,7 +50,7 @@ https://monosnap.com/file/h8zOIeAJchnUpXZ3ad1s7J0BMF7cyc
 
 
 14. настроить задачу на ежеминутный запуск
-cmd /c perl c:\adv\exchnage\processor.pl --debug >> z:\HTML\log\processor.log 2>&1
+cmd /c perl c:\adv\exchnage\processor.pl --debug >>z:\HTML\log\processor.log 2>&1
 
 15. проверить что задача выполняется периодически, проверить лог
 https://monosnap.com/file/jAegCHQhJfmbk09g9IdZlyRWcpSro9
