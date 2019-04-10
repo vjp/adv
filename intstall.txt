@@ -1,15 +1,23 @@
 1. скопировать скрипт c:\adv\exchange\processor.pl
+https://github.com/vjp/adv/raw/master/processor.pl
 
 2. установить Activestate perl
+https://github.com/vjp/adv/raw/master/lib/ActivePerl-5.26.3.2603-MSWin32-x64-a95bce075.exe
 
 3. скопировать библиотеку Iso8601.pm  в c:\perl64\site\lib
+https://github.com/vjp/adv/raw/master/lib/ISO8601.pm
 
 4. в z:\HTML\ положить 5 файлов *.css *.js
+https://github.com/vjp/adv/raw/master/html/bootstrap-grid.min.css
+https://github.com/vjp/adv/raw/master/html/bootstrap-reboot.min.css
+https://github.com/vjp/adv/raw/master/html/bootstrap.bundle.min.js
+https://github.com/vjp/adv/raw/master/html/bootstrap.min.css
+https://github.com/vjp/adv/raw/master/html/bootstrap.min.js
 
-5. идем на первый сервер и делаем маунты
-mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //172.17.72.13/from_virt /mnt/from_virt2/
-mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //172.17.72.13/HTML /mnt/HTML2/
-mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //172.17.72.13/backup_db /mnt/backup_db2
+5. идем на первый сервер и делаем маунты  (посмотреть как они натроены можно в /etc/rc.local)
+mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //<SERVERIP>/from_virt /mnt/from_virt2/
+mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //<SERVERIP>/HTML /mnt/HTML2/
+mount -t cifs -o username=from_virt,password='***',iocharset=utf8,vers=2.1,file_mode=0777,dir_mode=0777 //<SERVERIP>/backup_db /mnt/backup_db2
 
 6.  выгрузка конфига
 http://joxi.ru/Q2KbZjEULLNKRm
@@ -42,7 +50,7 @@ https://monosnap.com/file/h8zOIeAJchnUpXZ3ad1s7J0BMF7cyc
 
 
 14. настроить задачу на ежеминутный запуск
-cmd /c perl c:\adv\exchnage\processor.pl --debug >> z:\HTML\log\processor.log 2>&1
+cmd /c perl c:\adv\exchnage\processor.pl --debug >>z:\HTML\log\processor.log 2>&1
 
 15. проверить что задача выполняется периодически, проверить лог
 https://monosnap.com/file/jAegCHQhJfmbk09g9IdZlyRWcpSro9
