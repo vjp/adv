@@ -23,8 +23,8 @@ warn "===================================== START JDTIME :: $nowjd   TIME ".scal
 my $config_dir='z:/from_virt/exchange';
 my $rc=read_conf("${config_dir}/server.json");
 my $htmldir=$rc->{VALUES}->{HTMLDIR}->{langvalue}->{rus};
-my $clfdir=$rc->{VALUES}->{DEBUGDIR}->{langvalue}->{rus};
-my $debug_dir=$rc->{VALUES}->{HTMLDIR}->{langvalue}->{rus};
+my $clfdir=$rc->{VALUES}->{CLFDIR}->{langvalue}->{rus};
+my $debug_dir=$rc->{VALUES}->{DEBUGDIR}->{langvalue}->{rus};
 my $ftpdir=$rc->{VALUES}->{FTPDIR}->{langvalue}->{rus};
 my $offsetpname=$rc->{VALUES}->{OFFSETPNAME}->{langvalue}->{rus};
 
@@ -535,5 +535,6 @@ sub t_h {
 return $h_var;
 
 }
+
 
 
