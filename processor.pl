@@ -9,6 +9,7 @@ use POSIX qw (strftime);
 use ISO8601 qw(ymd_to_cjdn);
 use File::Copy;
 use Getopt::Long;
+use Time::Local;
 
 my @d=localtime;
 my $nowjd=ymd_to_cjdn($d[5]+1900,$d[4]+1,$d[3])+(($d[2]*60*60+$d[1]*60+$d[0]+20)/86400);
@@ -178,26 +179,21 @@ for my $c (@$conf) {
             
             	my $ttsec_start=$tt_ss+$tt_mn*60+$tt_hr*3600 - $blockdelay;
             	my $ttsec_end=$ttsec_start+$cc->{$ckey}->{dursec} + $blockdelay;
-            
-
 
 				$cc->{$ckey}->{cnouttime}=sprintf("%02d:%02d:%02d:%02d",$tt_hr,$tt_mn,$tt_ss,$sfr);
 
 				my ($vm,$vd,$vy)=split(/\//,$h->{'date'});
-				$vd+=1 if $tt_hr<3 ;
-                $vy+=2000; 
-
-				$cc->{$ckey}->{cnoutdate}="$rdate_y-$rdate_m-$rdate_d";
-				$cc->{$ckey}->{crealdate}=sprintf("%04d-%02d-%02d",$vy,$vm,$vd);
                 
-
+                my $ts=timelocal(0,0,0,$vd,$vm,$vy)+86400;  
+                $ts+86400 if $tt_hr<3; 
+                
+				$cc->{$ckey}->{cnoutdate}="$rdate_y-$rdate_m-$rdate_d";
+				$cc->{$ckey}->{crealdate}=strftime("%Y-%m-%d",localtime($ts));
+           
                 $cc->{$ckey}->{start}=$ttsec_start;
                 $cc->{$ckey}->{end}=$ttsec_end;
 
-                 
-
-
-
+           
 	        	if ($rawstr ne $row) {
 					$cc->{$ckey}->{craw}=$row;
                 	$cc->{$ckey}->{reps}=$tk->{$arkey}->{c}->{$cid};
