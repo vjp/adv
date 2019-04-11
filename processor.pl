@@ -230,7 +230,9 @@ for my $c (@$conf) {
 	my $fc=$viclist[0];
 	my $now_sec=now_sec();
 	warn "CK PERIOD  $ck->{start}..$ck->{end} FC PERIOD $cc->{$fc}->{start}..$cc->{$fc}->{end} NOW:$now_sec";
-	if (!$ck->{end} || $now_sec>$ck->{end}) {
+	if (	!$ck->{end} || 
+			$now_sec>$ck->{end} || 
+			($ck->{end}>86400 && $now_sec+86400>$ck->{end})      ) {
 		warn "switch fc";
 		$ck->{start}=$cc->{$fc}->{start};
 		$ck->{end}=$cc->{$fc}->{end};
@@ -249,7 +251,6 @@ for my $c (@$conf) {
     if ($need_write_conf) {
 		warn "Write channel list config ${config_dir}/channels/$c->{KEY}.json";
 		write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
-		#$changes=1 unless $need_skip;
 	}
 
 
