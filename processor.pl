@@ -184,7 +184,7 @@ for my $c (@$conf) {
 
 				my ($vm,$vd,$vy)=split(/\//,$h->{'date'});
                 
-                my $ts=timelocal(0,0,0,$vd,$vm,$vy)+86400;  
+                my $ts=timelocal(0,0,0,$vd,$vm,$vy);  
                 $ts+86400 if $tt_hr<3; 
                 
 				$cc->{$ckey}->{cnoutdate}="$rdate_y-$rdate_m-$rdate_d";
