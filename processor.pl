@@ -184,7 +184,7 @@ for my $c (@$conf) {
 
 				my ($vm,$vd,$vy)=split(/\//,$h->{'date'});
                 
-                my $ts=timelocal(0,0,0,$vd,$vm,$vy);  
+                my $ts=timelocal(0,0,0,$vd,$vm-1,$vy);  
                 $ts+86400 if $tt_hr<3; 
                 
 				$cc->{$ckey}->{cnoutdate}="$rdate_y-$rdate_m-$rdate_d";
@@ -467,6 +467,20 @@ sub t_h {
     <head>
                
     <link rel="stylesheet" href="./bootstrap.min.css"/>
+
+    <script>
+    	// Chrome autoplay sound fix.
+    	// chrome://flags/#autoplay-policy 
+    	// set Autoplay policy to No user gesture
+    	window.onload = function() {
+    		if (document.getElementsByClassName('btn-danger').length > 0) {
+    			var sound = new Audio("./00183.mp3");
+    			sound.play();
+    		}
+    	};
+    </script>
+
+    
 	<style>
     body{
 		background-color: #494949;
