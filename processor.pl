@@ -18,8 +18,7 @@ my $debug = '';
 
 GetOptions ('debug' => \$debug);
 
-warn "======== DEBUG MODE =========" if $debug;
-warn "===================================== START JDTIME :: $nowjd   TIME ".scalar localtime;
+log_info ("START JDTIME=$nowjd");
 
 my $config_dir='z:/from_virt/exchange';
 my $rc=read_conf("${config_dir}/server.json");
@@ -37,12 +36,11 @@ my $ftp_err;
 
 my $ftp = Net::FTP->new(
 	$rc->{VALUES}->{FTPSERVER}->{langvalue}->{rus},
-	#Debug => 1,
 	Passive=>1
 ); 
 
 unless ($ftp) {
-	warn "Cannot connect ftp: $@";
+	log_error ("Cannot connect ftp: $@");
 	$ftp_err=1;
 }
 
@@ -50,7 +48,7 @@ unless ($ftp_err) {
 	my $f=$ftp->login($rc->{VALUES}->{FTPLOGIN}->{langvalue}->{rus},$rc->{VALUES}->{FTPPASS}->{langvalue}->{rus});
 	unless ($f) {
    		$ftp_err=1;
-   		warn "Cannot login: ". $ftp->message;
+   		log_error("Cannot login: ". $ftp->message);
 	}
 }	  
 
@@ -84,9 +82,10 @@ for my $c (@$conf) {
     my $c_ftp_err;
       
 
-	warn "START PROCESSING ($c->{KEY}) $c->{NAME} CDELTA:$cdelta ABSOFFSET:$absoffset LNUM:$lnum";
-   	unless ($c->{VALUES}->{ACTIVECHANNEL}->{value}) {
-    	warn ">>> SKIP OFFLINE";
+    if ($c->{VALUES}->{ACTIVECHANNEL}->{value}) {
+		log_info ("START ($c->{KEY}) CDELTA:$cdelta ABSOFFSET:$absoffset LNUM:$lnum");
+	} else {
+    	log_warn ("SKIP OFFLINE CHANNEL  ($c->{KEY})");
     	next;
   	}	   
    	my $vicname=$c->{VALUES}->{VICNAME}->{langvalue}->{rus};
@@ -94,7 +93,7 @@ for my $c (@$conf) {
 	unless ($ftp_err) {
 		my $cfile=$ftp->get("${ftpdir}${vicname}","${config_dir}/channels/${vicname}");
 		unless ($cfile) {
-			warn  "ftp get failed (FILENAME:$vicname)". $ftp->message;
+			log_error  ("ftp get failed (FILENAME:$vicname)". $ftp->message);
 			$c_ftp_err=1;
  		}
 	}
@@ -103,7 +102,7 @@ for my $c (@$conf) {
    	open (VC2, "<${config_dir}/channels/${vicname}");
    	read (VC2,$vcontent,-s VC2);
    	close(VC2);
-    warn "uploaded $vicname size:".length ($vcontent);
+    log_info ("VICFILE UPLODAED $vicname SIZE:".length ($vcontent));
 	  
    	my @lines=split("\n",$vcontent);
 
@@ -114,10 +113,10 @@ for my $c (@$conf) {
     my $need_write_conf;
     my $now_sec=now_sec();
 
-   	warn "CK PERIOD  $ck->{start}..$ck->{end} NOW:$now_sec";
+   	log_info ("CHECK ACTIVE CONTAINER  $ck->{start}..$ck->{end} NOW:$now_sec");
 	
     if ($now_sec>$ck->{start} && $now_sec<$ck->{end}) {
-          warn "!!!!! NEED SKIP";
+          log_warn ("FOUND ACTIVE CONTAINER NEED SKIP PLAYLIST UPLODAD");
           $need_skip=1; 	
     }
 
@@ -148,8 +147,7 @@ for my $c (@$conf) {
 			$tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json");
             if ($tk->{$arkey}) {
 			        	
-    
-	        	my $ckey="${arkey}C${cid}";
+   	        	my $ckey="${arkey}C${cid}";
 				push (@viclist,$ckey);
             	$cc->{$ckey}=read_conf("${config_dir}/containers/$ckey.json");
 				$cc->{$ckey}->{dur}=$tk->{$arkey}->{c}->{$cid}->{VALUES}->{ADVTKEEP}->{langvalue}->{rus};
@@ -162,12 +160,9 @@ for my $c (@$conf) {
 				
             	my ($thr,$tmm,$tsec,$tfr)=split(/:/,$h->{'time'});
             	my $sfr=$tfr+$tsec*25+$tmm*25*60+$thr*25*60*60;
-            	#warn "T: $h->{'time'} SFR: $sfr";
             	$sfr-=$cdelta;
-            	#warn "CDELTA: $cdelta SFR:$sfr";
             	$sfr+=$absoffset;
-            	#warn "ABSOFFSET: $absoffset SFR:$sfr";
-           
+            
             	my $tt_hr=int($sfr/(25*60*60));
             	$sfr-=$tt_hr*25*60*60;
             	my $tt_mn=int($sfr/(25*60));
@@ -200,12 +195,9 @@ for my $c (@$conf) {
                 
 			    	if ($cc->{$ckey}->{reps}) {
 			    		if ($need_skip) {
-							warn "need skip changed";
+							log_warn ("need skip changed container upload");
 			    		} else {
-							warn "write container $arkey : $cid  ($h->{'time'} -> $cc->{$ckey}->{cnouttime})";  
-							warn "WAS:$rawstr";  
-							warn "NOW:$row";
-							warn "BLOCK DELAY $ckey: $ttsec_start - $ttsec_end";
+							log_message ("write container $arkey : ($cid:$ckey)  ($h->{'time'} -> $cc->{$ckey}->{cnouttime})  $ttsec_start..$ttsec_end");  
 							write_conf("${config_dir}/containers/$ckey.json",$cc->{$ckey});
 							$changes=1;
 				    		$ck->{utime}=time();
@@ -213,11 +205,11 @@ for my $c (@$conf) {
 				    		$need_write_conf=1; 
 				    	} 	
 					} else{  
-						warn "replace error $arkey $cid skip container";
+						log_error ("replace error $arkey $cid skip container");
 					}	
 				} 
 			} else { 
-				warn "ttable config read problem ${config_dir}/ttables/$arkey.json";
+				log_error ("ttable config read problem ${config_dir}/ttables/$arkey.json");
 				$broken_ttable=1;
 			}    			
 		}
@@ -225,11 +217,11 @@ for my $c (@$conf) {
     
 	my $fc=$viclist[0];
 	my $now_sec=now_sec();
-	warn "CK PERIOD  $ck->{start}..$ck->{end} FC PERIOD $cc->{$fc}->{start}..$cc->{$fc}->{end} NOW:$now_sec";
+	#warn "CK PERIOD  $ck->{start}..$ck->{end} FC PERIOD $cc->{$fc}->{start}..$cc->{$fc}->{end} NOW:$now_sec";
 	if (	!$ck->{end} || 
 			$now_sec>$ck->{end} || 
 			($ck->{end}>86400 && $now_sec+86400>$ck->{end})      ) {
-		warn "switch fc";
+		log_info ("SWITCH ACTIVE CONTAINER");
 		$ck->{start}=$cc->{$fc}->{start};
 		$ck->{end}=$cc->{$fc}->{end};
 		$ck->{cid}=$fc;
@@ -239,13 +231,13 @@ for my $c (@$conf) {
 
     my $vicliststr=join(';',@viclist);
 	if (!$ck->{viclist} || $vicliststr ne join(';',@{$ck->{viclist}})) {
-		warn "changed list";
+		log_warn ("container list changed");
 		$ck->{viclist}=\@viclist;
         $need_write_conf=1;
     }
 
     if ($need_write_conf) {
-		warn "Write channel list config ${config_dir}/channels/$c->{KEY}.json";
+		log_warn ("Write channel list config ${config_dir}/channels/$c->{KEY}.json");
 		write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
 	}
 
@@ -272,13 +264,13 @@ for my $c (@$conf) {
 			    $dreps+=$dur*25+$af;
 			}
 			if ($dreps!=$d) {
-				warn " !!!  CONTAINER $cid CONCISTENCY PROBLEM DUR:$d <=> BDUR:$dreps";
+				log_error ("CONTAINER $cid CONCISTENCY PROBLEM DUR:$d <=> BDUR:$dreps");
 				$XMLstatus="btn-danger";
 				$ec{$cid}=1;	
 			}
 	    } else {	
 	    	$XMLstatus="btn-danger";
-		 	warn "!!! PROBLEM REPLACE  $arkey $cid";
+		 	log_error ("PROBLEM REPLACE  $arkey $cid");
 		 	$ec{$cid}=1;
 	    }	 
     }
@@ -293,7 +285,7 @@ for my $c (@$conf) {
     		);
         } else {
         	$clf_err=1;
-			warn "clf error file:$cpath error:$!" ;
+			log_error ("clf error file:$cpath error:$!");
 		} 	
     }	
 
@@ -415,18 +407,36 @@ for my $c (@$conf) {
 print MF t_b();
 close MF;
 move($mon_work_template,$mon_template);
+log_info("PROCESSING ENDED");
 
 
 #####################################
 
-sub now_sec () {
+sub log_message ($$) {
+	my ($type,$message)=@_;
+	my $ts=strftime("%Y-%m-%d - %H:%M:%S",localtime);
+	warn "$ts - $type - $message\n";
+}
 
+
+sub log_warn ($) {
+	log_message('WARNING',$_[0]);
+}
+
+sub log_info ($) {
+	log_message('INFO',$_[0]);
+}
+
+sub log_error ($) {
+	log_message('ERROR',$_[0]);
+}
+
+
+sub now_sec () {
 	my @d=localtime;
-	
 	my $now_hh=$d[2];
 	my $now_mm=$d[1];
 	my $now_ss=$d[0];
-
 	return  $now_ss+$now_mm*60+$now_hh*3600;
 }
 
@@ -480,7 +490,7 @@ sub t_h {
     	};
     </script>
 
-    
+
 	<style>
     body{
 		background-color: #494949;
