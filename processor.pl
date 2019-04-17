@@ -237,7 +237,7 @@ for my $c (@$conf) {
     }
 
     if ($need_write_conf) {
-		log_warn ("Write channel list config ${config_dir}/channels/$c->{KEY}.json");
+		log_warn ("WRITE CONF $c->{KEY}.json");
 		write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
 	}
 
