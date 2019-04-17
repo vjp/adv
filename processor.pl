@@ -116,7 +116,7 @@ for my $c (@$conf) {
    	log_info ("CHECK ACTIVE CONTAINER  $ck->{start}..$ck->{end} NOW:$now_sec");
 	
     if ($now_sec>$ck->{start} && $now_sec<$ck->{end}) {
-          log_warn ("FOUND ACTIVE CONTAINER NEED SKIP PLAYLIST UPLODAD");
+          log_warn ("ACTIVE CONTAINER SKIP PLAYLIST UPLOAD");
           $need_skip=1; 	
     }
 
@@ -420,7 +420,7 @@ sub log_message ($$) {
 
 
 sub log_warn ($) {
-	log_message('WARNING',$_[0]);
+	log_message('WARN',$_[0]);
 }
 
 sub log_info ($) {
@@ -428,7 +428,7 @@ sub log_info ($) {
 }
 
 sub log_error ($) {
-	log_message('ERROR',$_[0]);
+	log_message('ERRR',$_[0]);
 }
 
 
