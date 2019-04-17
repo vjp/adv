@@ -197,7 +197,7 @@ for my $c (@$conf) {
 			    		if ($need_skip) {
 							log_warn ("need skip changed container upload");
 			    		} else {
-							log_message ("write container $arkey : ($cid:$ckey)  ($h->{'time'} -> $cc->{$ckey}->{cnouttime})  $ttsec_start..$ttsec_end");  
+							log_warn ("write container $arkey : ($cid:$ckey)  ($h->{'time'} -> $cc->{$ckey}->{cnouttime})  $ttsec_start..$ttsec_end");  
 							write_conf("${config_dir}/containers/$ckey.json",$cc->{$ckey});
 							$changes=1;
 				    		$ck->{utime}=time();
@@ -277,7 +277,7 @@ for my $c (@$conf) {
 
     my $clf_err;
 	if ($changes && !$need_skip) {
-    	warn "CLF OUT";	
+    	log_warn ("CLF GENERATE $cpath/playlist.clf");	
         my $ccf=open (CLF,">$cpath/playlist.clf");
         if ($ccf) {
     		print CLF qq(<?xml version="1.0" encoding="UTF-8"?>
