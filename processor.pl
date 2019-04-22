@@ -320,7 +320,7 @@ for my $c (@$conf) {
 	    </div></div>   
 	);
 
-    my $ccol=$ck->{cnouttime} ne $cc->{$viclist[0]}->{cnouttime}?'FF0000':'D3D3D3';
+    my $ccol=$ck->{cnouttime} ne $cc->{$viclist[0]}->{cnouttime}?'FFFF00':'D3D3D3';
 	print MF qq (<h3 style="color:#${ccol};" class="center gray_bkgrnd">CUR: $ck->{cnouttime}</h3>);  
 	print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">CLF: $utime ($ck->{lcid})</h3>);  
 
