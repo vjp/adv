@@ -225,7 +225,9 @@ for my $c (@$conf) {
 	my $now_sec=now_sec();
 	my $now_ts_sec=time;
 	if ($now_ts_sec>$ck->{endts}) {
-		log_info ("SWITCH ACTIVE CONTAINER : ".scalar localtime($cc->{$fc}->{startts})."...".scalar localtime($cc->{$fc}->{endts}));
+		my $pst=strftime("%d.%m %H:%M:%S",localtime($cc->{$fc}->{startts}));
+		my $est=strftime("%d.%m %H:%M:%S",localtime($cc->{$fc}->{endts}));
+		log_info ("SWITCH ACTIVE CONTAINER : ${pst}..${est}");
 		$ck->{start}=$cc->{$fc}->{start};
 		$ck->{end}=$cc->{$fc}->{end};
 		$ck->{startts}=$cc->{$fc}->{startts};
@@ -318,8 +320,9 @@ for my $c (@$conf) {
 	    </div></div>   
 	);
 
+    my $ccol=$ck->{cnouttime} ne $cc->{$viclist[0]}->{cnouttime}?'FF0000':'D3D3D3';
+	print MF qq (<h3 style="color:#${ccol};" class="center gray_bkgrnd">CUR: $ck->{cnouttime}</h3>);  
 	print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">CLF: $utime ($ck->{lcid})</h3>);  
-	print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">CUR: $ck->{cnouttime}</h3>);  
 
     print MF qq( 
 		<div class="card gray_bkgrnd">
