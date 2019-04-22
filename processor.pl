@@ -179,19 +179,22 @@ for my $c (@$conf) {
 
 				my ($vm,$vd,$vy)=split(/\//,$h->{'date'});
                 
-                my $ts=timelocal(0,0,0,$vd,$vm-1,$vy);  
+                
+                my $ts=timelocal($tt_ss,$tt_mn,$tt_hr,$vd,$vm-1,$vy);  
                 $ts+=86400 if $tt_hr<3; 
                 
-
-                #warn "$h->{'date'} ---->   $tt_hr $tt_mn"	
-
 				$cc->{$ckey}->{cnoutdate}="$rdate_y-$rdate_m-$rdate_d";
 				$cc->{$ckey}->{crealdate}=strftime("%Y-%m-%d",localtime($ts));
            
                 $cc->{$ckey}->{start}=$ttsec_start;
                 $cc->{$ckey}->{end}=$ttsec_end;
 
-           
+                $cc->{$ckey}->{startts}= $ts - $blockdelay;
+                $cc->{$ckey}->{endts}  = $ts + $cc->{$ckey}->{dursec};
+
+           		#warn "ts :".scalar localtime($cc->{$ckey}->{startts})." --- ".scalar localtime($cc->{$ckey}->{endts});
+
+
 	        	if ($rawstr ne $row) {
 					$cc->{$ckey}->{craw}=$row;
                 	$cc->{$ckey}->{reps}=$tk->{$arkey}->{c}->{$cid};
@@ -220,13 +223,14 @@ for my $c (@$conf) {
     
 	my $fc=$viclist[0];
 	my $now_sec=now_sec();
-	#warn "CK PERIOD  $ck->{start}..$ck->{end} FC PERIOD $cc->{$fc}->{start}..$cc->{$fc}->{end} NOW:$now_sec";
-	if (	!$ck->{end} || 
-			$now_sec>$ck->{end} || 
-			($ck->{end}>86400 && $now_sec+86400>$ck->{end})      ) {
-		log_info ("SWITCH ACTIVE CONTAINER");
+	my $now_ts_sec=time;
+	if ($now_ts_sec>$ck->{endts}) {
+		log_info ("SWITCH ACTIVE CONTAINER : ".scalar localtime($cc->{$fc}->{startts})."...".scalar localtime($cc->{$fc}->{endts}));
 		$ck->{start}=$cc->{$fc}->{start};
 		$ck->{end}=$cc->{$fc}->{end};
+		$ck->{startts}=$cc->{$fc}->{startts};
+		$ck->{endts}=$cc->{$fc}->{endts};
+
 		$ck->{cid}=$fc;
 		$ck->{cnouttime}=$cc->{$fc}->{cnouttime};
 		$need_write_conf=1;
@@ -315,6 +319,7 @@ for my $c (@$conf) {
 	);
 
 	print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">CLF: $utime ($ck->{lcid})</h3>);  
+	print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">CUR: $ck->{cnouttime}</h3>);  
 
     print MF qq( 
 		<div class="card gray_bkgrnd">
@@ -389,8 +394,7 @@ for my $c (@$conf) {
 		
     print MF qq(
 	  </tbody></table>
-      <span style="color:#D3D3D3;">CUR:$ck->{cnouttime}<br/>$ttext</span>;
-	  </div> 
+  	  </div> 
 	  </div></div>
 	);
 
