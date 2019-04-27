@@ -91,11 +91,7 @@ for my $c (@$conf) {
    	my $vicname=$c->{VALUES}->{VICNAME}->{langvalue}->{rus};
  
 	unless ($ftp_err) {
-		my $cfile=$ftp->get("${ftpdir}${vicname}","${config_dir}/channels/${vicname}");
-		unless ($cfile) {
-			log_error  ("ftp get failed (FILENAME:$vicname)". $ftp->message);
-			$c_ftp_err=1;
- 		}
+		$c_ftp_err=file_get($ftp,$ftpdir,$config_dir,$vicname);
 	}
    
    	my $vcontent;
@@ -421,6 +417,29 @@ log_info("PROCESSING ENDED");
 
 
 #####################################
+
+sub file_get ($$$$) {
+	my ($ftp,$ftpdir,$config_dir,$vicname)=@_;
+	my $err;
+
+	for my $try (1..3) {
+		my $cfile=$ftp->get("${ftpdir}${vicname}","${config_dir}/channels/${vicname}");
+		if ($cfile) {
+			$err=0;
+			last;
+		} else {
+			log_warn  ("ftp fileget failed (TRY: $try FILENAME:$vicname)". $ftp->message);
+			$err=1;
+ 		}
+ 		sleep 1;
+ 	}	
+ 	if ($err) {
+ 		log_error("CANT GET FILE ${ftpdir}${vicname}");	
+ 	}
+ 	return $err;	
+
+}
+
 
 sub log_message ($$) {
 	my ($type,$message)=@_;
