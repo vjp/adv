@@ -256,7 +256,7 @@ for my $c (@$conf) {
 	
     my %ec;
 
-	my $XMLstatus="btn-success";
+	my $VICstatus="btn-success";
     for (@viclist) {
     	my $cid=$cc->{$_}->{cid};
         my $arkey=$cc->{$_}->{arkey};
@@ -270,11 +270,11 @@ for my $c (@$conf) {
 			}
 			if ($dreps!=$d) {
 				log_error ("CONTAINER $cid CONCISTENCY PROBLEM DUR:$d <=> BDUR:$dreps");
-				$XMLstatus="btn-danger";
+				$VICstatus="btn-danger";
 				$ec{$cid}=1;	
 			}
 	    } else {	
-	    	$XMLstatus="btn-danger";
+	    	$VICstatus="btn-danger";
 		 	log_error ("PROBLEM REPLACE  $arkey $cid");
 		 	$ec{$cid}=1;
 	    }	 
@@ -296,8 +296,8 @@ for my $c (@$conf) {
 
     my $FTPstatus="btn-success";
 	$FTPstatus="btn-danger" if $ftp_err || $c_ftp_err; 
-	my $VICstatus="btn-success";
-	$VICstatus="btn-danger" if $broken_ttable; 
+	my $XMLstatus="btn-success";
+	$XMLstatus="btn-danger" if $broken_ttable; 
     my $CLFstatus="btn-success";
     $CLFstatus="btn-warning" if $changes;
     $CLFstatus="btn-danger"  if $clf_err;
