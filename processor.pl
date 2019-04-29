@@ -274,7 +274,7 @@ for my $c (@$conf) {
 				$ec{$cid}=1;	
 			}
 	    } else {	
-	    	$VICstatus="btn-danger";
+	    	$VICstatus="btn-warning";
 		 	log_error ("PROBLEM REPLACE  $arkey $cid");
 		 	$ec{$cid}=1;
 	    }	 
