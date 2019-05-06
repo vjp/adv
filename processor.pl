@@ -437,6 +437,56 @@ for my $c (@$conf) {
 		}
 
 	}	
+
+
+	if ($agelabel) {
+
+ 		my $acutime=strftime("%H:%M:%S",localtime($ck->{acutime}));
+
+		print MF qq(
+         <div class="column"><div class="container">
+	     <h3 style="color:#D3D3D3;" class="center gray_bkgrnd">$c->{NAME}  (AGE CONTROL)</h3>
+		);  
+	
+
+		$XMLstatus="btn-success";
+		$VICstatus="btn-success";
+		$CLFstatus="btn-success";
+    	$SKYstatus="btn-success";
+		print MF qq(
+	    	<div class="center gray_bkgrnd"><div class="btn-group btn-group-justified" role="group" aria-label="...">
+               <div class="btn-group" role="group">
+	          <button type="button" class="btn btn-default $FTPstatus">FTP</button>
+	          <button type="button" class="btn btn-default $XMLstatus">XML</button>
+		  	<button type="button" class="btn btn-default $VICstatus">VIC</button>
+		  	<button type="button" class="btn btn-default $CLFstatus">CLF</button>
+		  	<button type="button" class="btn btn-default $SKYstatus">SKY</button>
+	       </div>
+	       </div></div>   
+		);
+
+		my $acccol=$ck->{accnouttime} ne $accc->{$acviclist[0]}->{cnouttime}?'FFFF00':'D3D3D3';
+		print MF qq (<h3 style="color:#${ccol};" class="center gray_bkgrnd">CUR: $ck->{accnouttime}</h3>);  
+		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">CLF: $acutime ($ck->{aclcid})</h3>);  
+
+    	print MF qq( 
+			<div class="card gray_bkgrnd">
+			<table class="table table-bordered table-striped table-dark" >
+			<thead><tr class='blue_bkgrnd'>
+			<th>ID</th><th>Start time</th><th>Duration</th>
+			</tr></thead>
+			<tbody>
+		);
+
+    	print MF qq(
+	  		</tbody></table>
+  	  		</div> 
+	  		</div></div>
+		);
+
+	}
+
+
 																															
 }	
 print MF t_b();
