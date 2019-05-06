@@ -142,11 +142,14 @@ for my $c (@$conf) {
      		if ($h_str->{'grp'}) {
      			my $cid=$h_str->{'id'};
      			log_info ("AGE CONTROL CONTAINER $cid");
- 				warn Dumper($h_str);
  				my $dtstr=strftime("%Y%m%d",localtime($h_str->{ts}));
  				my $acckey="R${cp}${dtstr}C$cid";
 				push (@acviclist,$acckey);
             	$accc->{$acckey}=read_conf("${config_dir}/accontainers/$acckey.json");
+				$accc->{$acckey}->{cid}=$cid;
+				$accc->{$acckey}->{cnouttime}=$h_str->{cnouttime}; 
+				$accc->{$acckey}->{crealdate}=strftime("%Y-%m-%d",localtime($h_str->{ts}));
+ 				$accc->{$acckey}->{grp}=$h_str->{'grp'};
 
             	my $rawstr=$accc->{$acckey}->{craw};
 
@@ -466,17 +469,32 @@ for my $c (@$conf) {
 		);
 
 		my $acccol=$ck->{accnouttime} ne $accc->{$acviclist[0]}->{cnouttime}?'FFFF00':'D3D3D3';
-		print MF qq (<h3 style="color:#${ccol};" class="center gray_bkgrnd">CUR: $ck->{accnouttime}</h3>);  
+		print MF qq (<h3 style="color:#${acccol};" class="center gray_bkgrnd">CUR: $ck->{accnouttime}</h3>);  
 		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">CLF: $acutime ($ck->{aclcid})</h3>);  
 
     	print MF qq( 
 			<div class="card gray_bkgrnd">
 			<table class="table table-bordered table-striped table-dark" >
 			<thead><tr class='blue_bkgrnd'>
-			<th>ID</th><th>Start time</th><th>Duration</th>
+				<th>ID</th>
+				<th>Start time</th>
+				<th>Label</th>
 			</tr></thead>
 			<tbody>
 		);
+
+ 		my $counter=0; 
+
+    	for my $rid (@acviclist) {
+        	$counter++;
+        	print MF qq (
+	    		<tr>
+            	<th>$accc->{$rid}->{cid}</th>
+	        	<th>$accc->{$rid}->{crealdate} $accc->{$rid}->{cnouttime}</th>
+	        	<th>$accc->{$rid}->{grp}</th>
+	       		</tr>
+	    	) if $counter<9;
+	    }	
 
     	print MF qq(
 	  		</tbody></table>
@@ -525,7 +543,7 @@ sub row_parse ($$$) {
     my $ts=timelocal($tt_ss,$tt_mn,$tt_hr,$vd,$vm-1,$vy);  
     $ts+=86400 if $tt_hr<3; 
     $r->{'ts'}=$ts;
-           
+    $r->{'cnouttime'}=sprintf("%02d:%02d:%02d:%02d",$tt_hr,$tt_mn,$tt_ss,$sfr);     
 
 	return $r;
 }
