@@ -70,7 +70,10 @@ for my $c (@$conf) {
     my $arkey_old=$ck->{activer};
 	my $vic_index=0;
 	my $tk;
+	
 	my $cc;
+	my $accc;
+
 	my $cp=$c->{VALUES}->{CHNLPREFIX}->{langvalue}->{rus};
 	my $cpath=$c->{VALUES}->{CLFPATH}->{langvalue}->{rus};
 	my $ttext=$c->{VALUES}->{TTOUTTEXT}->{langvalue}->{rus};
@@ -78,6 +81,7 @@ for my $c (@$conf) {
     my $absoffset=$c->{VALUES}->{$offsetpname}->{value};
     my $lnum=$c->{VALUES}->{CLFLNUM}->{value};
     my $blockdelay=$c->{VALUES}->{BLOCKDELAY}->{value};
+    my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
     my $clfctype=$clftypes{$c->{VALUES}->{CLFSTYPE}->{value}};
     my $c_ftp_err;
       
@@ -103,6 +107,7 @@ for my $c (@$conf) {
    	my @lines=split("\n",$vcontent);
 
     my @viclist;
+    my @acviclist;
     my $changes;
     my $need_skip;
     my $broken_ttable;
@@ -130,6 +135,30 @@ for my $c (@$conf) {
 		$h->{'id'}=shift @recs;
   		$h->{'name'}=join(' ',@recs);
      	next if $h->{'time'} eq 'ON-AIR';
+
+
+     	if ($agelabel) {
+     		my $h_str=row_parse($row,$cdelta,$absoffset);
+     		if ($h_str->{'grp'}) {
+     			my $cid=$h_str->{'id'};
+     			log_info ("AGE CONTROL CONTAINER $cid");
+ 				warn Dumper($h_str);
+ 				my $dtstr=strftime("%Y%m%d",localtime($h_str->{ts}));
+ 				my $acckey="R${cp}${dtstr}C$cid";
+				push (@acviclist,$acckey);
+            	$accc->{$acckey}=read_conf("${config_dir}/accontainers/$acckey.json");
+
+            	my $rawstr=$accc->{$acckey}->{craw};
+
+            	if ($rawstr ne $row) {
+					$accc->{$acckey}->{craw}=$row;
+               		log_warn ("write ac container ($acckey)");  
+					write_conf("${config_dir}/accontainers/$acckey.json",$accc->{$acckey});
+				}			
+	
+     		}
+     	}
+
 
 		if ($h->{'name'}=~/К-р(\d+) \((\d\d)(\d\d)(\d\d\d\d)\)/) {
 
@@ -417,6 +446,39 @@ log_info("PROCESSING ENDED");
 
 
 #####################################
+sub row_parse ($$$) {
+	my ($row,$cdelta,$absoffset) = @_;
+	my $r;
+    $r->{'date'}=	substr($row,  9, 8);
+    $r->{'time'}=	substr($row, 18,11);
+    $r->{'index'}=	substr($row, 30, 2);
+    $r->{'chrono'}=	substr($row, 32,11);
+    $r->{'id'}=		substr($row, 65,16);
+	$r->{'grp'}=	substr($row,116,16);
+	$r->{'name'}=	substr($row,183,66);
+	$r->{$_}=~s/\s+$// for keys %{$r};
+
+
+ 	my ($thr,$tmm,$tsec,$tfr)=split(/:/,$r->{'time'});
+    my $sfr=$tfr+$tsec*25+$tmm*25*60+$thr*25*60*60;
+    $sfr-=$cdelta;
+    $sfr+=$absoffset;
+            
+    my $tt_hr=int($sfr/(25*60*60));
+    $sfr-=$tt_hr*25*60*60;
+    my $tt_mn=int($sfr/(25*60));
+    $sfr-=$tt_mn*25*60;
+    my $tt_ss=int($sfr/25);
+    $sfr-=$tt_ss*25;
+
+	my ($vm,$vd,$vy)=split(/\//,$r->{'date'});
+    my $ts=timelocal($tt_ss,$tt_mn,$tt_hr,$vd,$vm-1,$vy);  
+    $ts+=86400 if $tt_hr<3; 
+    $r->{'ts'}=$ts;
+           
+
+	return $r;
+}
 
 sub file_get ($$$$) {
 	my ($ftp,$ftpdir,$config_dir,$vicname)=@_;
