@@ -22,6 +22,8 @@ log_info ("START JDTIME=$nowjd");
 
 my $config_dir='z:/from_virt/exchange';
 my $rc=read_conf("${config_dir}/server.json");
+my $ac_names=al_names($config_dir);
+
 my $htmldir=$rc->{VALUES}->{HTMLDIR}->{langvalue}->{rus};
 my $clfdir=$rc->{VALUES}->{CLFDIR}->{langvalue}->{rus};
 my $debug_dir=$rc->{VALUES}->{DEBUGDIR}->{langvalue}->{rus};
@@ -81,8 +83,15 @@ for my $c (@$conf) {
     my $absoffset=$c->{VALUES}->{$offsetpname}->{value};
     my $lnum=$c->{VALUES}->{CLFLNUM}->{value};
     my $blockdelay=$c->{VALUES}->{BLOCKDELAY}->{value};
-    my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
     my $clfctype=$clftypes{$c->{VALUES}->{CLFSTYPE}->{value}};
+  
+    my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
+    my $acdur=$c->{VALUES}->{ACDUR}->{value};
+    my $evbegoffset=$c->{VALUES}->{EVBEGOFFSET}->{value};
+    my $acclfctype=$clftypes{$c->{VALUES}->{ACCLFSTYPE}->{value}};
+    my $aclnum=$c->{VALUES}->{ACCLFLNUM}->{value};
+   
+
     my $c_ftp_err;
       
 
@@ -111,6 +120,7 @@ for my $c (@$conf) {
     my $changes;
     my $acchanges;
     my $need_skip;
+    my $ac_need_skip;
     my $broken_ttable;
     my $need_write_conf;
     my $now_sec=now_sec();
@@ -120,6 +130,14 @@ for my $c (@$conf) {
     if ($now_sec>$ck->{start} && $now_sec<$ck->{end}) {
           log_warn ("ACTIVE CONTAINER SKIP PLAYLIST UPLOAD");
           $need_skip=1; 	
+    }
+
+    if ($agelabel) {
+    	my $now_ts=time();
+    	if ($now_ts>$ck->{acstartts} && $now_ts<$ck->{acendts}) {
+         	log_warn ("AC ACTIVE CONTAINER SKIP PLAYLIST UPLOAD  [ $ck->{acstartts} < $now_ts > $ck->{acendts} ] ");
+          	$ac_need_skip=1; 	
+    	}	
     }
 
 
@@ -139,11 +157,10 @@ for my $c (@$conf) {
 
 
      	if ($agelabel) {
-     		my $h_str=row_parse($row,$cdelta,$absoffset);
+     		my $h_str=row_parse($row,$cdelta,$absoffset,$evbegoffset);
      		if ($h_str->{'grp'}) {
      			my $cid=$h_str->{'id'};
-     			log_info ("AGE CONTROL CONTAINER $cid");
- 				my $dtstr=strftime("%Y%m%d",localtime($h_str->{ts}));
+     			my $dtstr=strftime("%Y%m%d",localtime($h_str->{ts}));
  				my $acckey="R${cp}${dtstr}C$cid";
 				push (@acviclist,$acckey);
             	$accc->{$acckey}=read_conf("${config_dir}/accontainers/$acckey.json");
@@ -153,21 +170,22 @@ for my $c (@$conf) {
  				$accc->{$acckey}->{grp}=$h_str->{'grp'};
 
      			$accc->{$acckey}->{startts}= $h_str->{ts} - $blockdelay;
-                $accc->{$acckey}->{endts}  = $h_str->{ts} + 60;
-
-           	
-
+                $accc->{$acckey}->{endts}  = $h_str->{ts} + $acdur;
 
             	my $rawstr=$accc->{$acckey}->{craw};
 
             	if ($rawstr ne $row) {
-					$accc->{$acckey}->{craw}=$row;
-               		log_warn ("write ac container ($acckey)");  
-					write_conf("${config_dir}/accontainers/$acckey.json",$accc->{$acckey});
-					$acchanges=1;
-				    $ck->{acutime}=time();
-				    $ck->{aclcid}=$cid;
-				    $need_write_conf=1; 		
+            		if ($ac_need_skip) {
+						log_warn ("ac need skip changed container upload");
+			    	} else {	
+						$accc->{$acckey}->{craw}=$row;
+               			log_warn ("write ac container ($acckey)");  
+						write_conf("${config_dir}/accontainers/$acckey.json",$accc->{$acckey});
+						$acchanges=1;
+				    	$ck->{acutime}=time();
+				    	$ck->{aclcid}=$cid;
+				    	$need_write_conf=1; 		
+				    }	
 				}			
 	
      		}
@@ -230,9 +248,6 @@ for my $c (@$conf) {
 
                 $cc->{$ckey}->{startts}= $ts - $blockdelay;
                 $cc->{$ckey}->{endts}  = $ts + $cc->{$ckey}->{dursec};
-
-           		#warn "ts :".scalar localtime($cc->{$ckey}->{startts})." --- ".scalar localtime($cc->{$ckey}->{endts});
-
 
 	        	if ($rawstr ne $row) {
 					$cc->{$ckey}->{craw}=$row;
@@ -455,6 +470,7 @@ for my $c (@$conf) {
 
 	if ($agelabel) {
 
+		my $clf_err;
 		my $fc=$acviclist[0];
 		my $now_ts_sec=time;
 		if ($now_ts_sec>$ck->{acendts}) {
@@ -489,12 +505,27 @@ for my $c (@$conf) {
          <div class="column"><div class="container">
 	     <h3 style="color:#D3D3D3;" class="center gray_bkgrnd">$c->{NAME}  (AGE CONTROL)</h3>
 		);  
-	
+
+		if ($acchanges && !$ac_need_skip) {
+    		log_warn ("CLF GENERATE $cpath/ac_playlist.clf");	
+        	my $ccf=open (CLF,">$cpath/ac_playlist.clf");
+        	if ($ccf) {
+    			print CLF qq(<?xml version="1.0" encoding="UTF-8"?>
+        		<castlist fps="25" list_upload_time="$nowjd" list_upload_layer="$aclnum">
+    			);
+        	} else {
+        		$clf_err=1;
+				log_error ("clf error file:$cpath error:$!");
+			} 	
+    	}	
 
 		$XMLstatus="btn-success";
 		$VICstatus="btn-success";
 		$CLFstatus="btn-success";
-    	$SKYstatus="btn-success";
+    	$CLFstatus="btn-warning" if $acchanges;
+    	$CLFstatus="btn-danger"  if $clf_err;
+    	$SKYstatus="btn-warning" if $ac_need_skip;
+
 		print MF qq(
 	    	<div class="center gray_bkgrnd"><div class="btn-group btn-group-justified" role="group" aria-label="...">
                <div class="btn-group" role="group">
@@ -533,6 +564,27 @@ for my $c (@$conf) {
 	        	<th>$accc->{$rid}->{grp}</th>
 	       		</tr>
 	    	) if $counter<9;
+
+        	my $framedur=$acdur*25;
+            print CLF qq (
+                	<item uri="$ac_names->{$accc->{$rid}->{grp}}"
+        		  		start_type="$acclfctype"
+        		  		start_time="$accc->{$rid}->{cnouttime}"
+                  		start_date="$accc->{$rid}->{crealdate}"
+                  		tc_orig=""
+                  		in_point="0"
+                  		out_point="$framedur"
+                  		duration="$framedur"
+                        trans_mode="Cut"
+                        trans_speed="Fast"
+                        lead_out="0"
+                  		title="$accc->{$rid}->{cid}"
+                  		group="$accc->{$rid}->{cid}"
+                  		end_mode="none"
+                  		tape_type="digital">
+            		</item>
+             ) if $acchanges && !$ac_need_skip && !$clf_err;
+
 	    }	
 
     	print MF qq(
@@ -540,6 +592,17 @@ for my $c (@$conf) {
   	  		</div> 
 	  		</div></div>
 		);
+
+		if ($acchanges && !$ac_need_skip && !$clf_err) {
+    		print CLF qq(</castlist>);
+			close CLF;
+			if ($debug) {
+            	my $filename=$cp.strftime("%Y%m%d-%H%M%S_ac.clf",localtime());
+				copy("$cpath/ac_playlist.clf","${debug_dir}/${filename}");
+				my $vfilename=$cp.strftime("%Y%m%d-%H%M%S.vic",localtime());	
+				copy("${config_dir}/channels/${vicname}","${debug_dir}/${vfilename}");
+			}
+		}	
 
 	}
 
@@ -553,8 +616,19 @@ log_info("PROCESSING ENDED");
 
 
 #####################################
-sub row_parse ($$$) {
-	my ($row,$cdelta,$absoffset) = @_;
+sub al_names ($) {
+	my ($config_dir)=@_;
+	my $h;
+	my $ac=read_conf("${config_dir}/acconfig.json");
+	for (@$ac) {
+		$h->{$_->{VALUES}->{ACVICLABEL}->{langvalue}->{rus}}=$_->{VALUES}->{RFNAME}->{langvalue}->{rus}
+	}
+	return $h
+}
+
+
+sub row_parse ($$$$) {
+	my ($row,$cdelta,$absoffset,$evbegoffset) = @_;
 	my $r;
     $r->{'date'}=	substr($row,  9, 8);
     $r->{'time'}=	substr($row, 18,11);
@@ -570,6 +644,8 @@ sub row_parse ($$$) {
     my $sfr=$tfr+$tsec*25+$tmm*25*60+$thr*25*60*60;
     $sfr-=$cdelta;
     $sfr+=$absoffset;
+
+    $sfr+=$evbegoffset;
             
     my $tt_hr=int($sfr/(25*60*60));
     $sfr-=$tt_hr*25*60*60;
