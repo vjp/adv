@@ -109,6 +109,7 @@ for my $c (@$conf) {
     my @viclist;
     my @acviclist;
     my $changes;
+    my $acchanges;
     my $need_skip;
     my $broken_ttable;
     my $need_write_conf;
@@ -151,12 +152,22 @@ for my $c (@$conf) {
 				$accc->{$acckey}->{crealdate}=strftime("%Y-%m-%d",localtime($h_str->{ts}));
  				$accc->{$acckey}->{grp}=$h_str->{'grp'};
 
+     			$accc->{$acckey}->{startts}= $h_str->{ts} - $blockdelay;
+                $accc->{$acckey}->{endts}  = $h_str->{ts} + 60;
+
+           	
+
+
             	my $rawstr=$accc->{$acckey}->{craw};
 
             	if ($rawstr ne $row) {
 					$accc->{$acckey}->{craw}=$row;
                		log_warn ("write ac container ($acckey)");  
 					write_conf("${config_dir}/accontainers/$acckey.json",$accc->{$acckey});
+					$acchanges=1;
+				    $ck->{acutime}=time();
+				    $ck->{aclcid}=$cid;
+				    $need_write_conf=1; 		
 				}			
 	
      		}
@@ -443,6 +454,34 @@ for my $c (@$conf) {
 
 
 	if ($agelabel) {
+
+		my $fc=$acviclist[0];
+		my $now_ts_sec=time;
+		if ($now_ts_sec>$ck->{acendts}) {
+			my $pst=strftime("%d.%m %H:%M:%S",localtime($accc->{$fc}->{startts}));
+			my $est=strftime("%d.%m %H:%M:%S",localtime($accc->{$fc}->{endts}));
+			log_info ("SWITCH AC ACTIVE CONTAINER : ${pst}..${est}");
+			$ck->{acstartts}=$accc->{$fc}->{startts};
+			$ck->{acendts}=$accc->{$fc}->{endts};
+
+			$ck->{accid}=$fc;
+			$ck->{accnouttime}=$accc->{$fc}->{cnouttime};
+			$need_write_conf=1;
+		}
+
+    	my $vicliststr=join(';',@acviclist);
+		if (!$ck->{acviclist} || $vicliststr ne join(';',@{$ck->{acviclist}})) {
+			log_warn ("accontainer list changed");
+			$ck->{acviclist}=\@acviclist;
+        	$need_write_conf=1;
+    	}
+
+
+		if ($need_write_conf) {
+			log_warn ("WRITE CONF $c->{KEY}.json");
+			write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
+		}
+
 
  		my $acutime=strftime("%H:%M:%S",localtime($ck->{acutime}));
 
