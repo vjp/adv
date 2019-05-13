@@ -34,25 +34,13 @@ my $offsetpname=$rc->{VALUES}->{OFFSETPNAME}->{langvalue}->{rus};
 
 my $mon_work_template=$htmldir.'mon.html.tmp';
 my $mon_template=$htmldir.'mon.html';
-my $ftp_err;
 
-my $ftp = Net::FTP->new(
-	$rc->{VALUES}->{FTPSERVER}->{langvalue}->{rus},
-	Passive=>1
-); 
 
-unless ($ftp) {
-	log_error ("Cannot connect ftp: $@");
-	$ftp_err=1;
-}
-
-unless ($ftp_err) {
-	my $f=$ftp->login($rc->{VALUES}->{FTPLOGIN}->{langvalue}->{rus},$rc->{VALUES}->{FTPPASS}->{langvalue}->{rus});
-	unless ($f) {
-   		$ftp_err=1;
-   		log_error("Cannot login: ". $ftp->message);
-	}
-}	  
+(my $ftp,my $ftp_err)=ftp_connect(
+		$rc->{VALUES}->{FTPSERVER}->{langvalue}->{rus},
+		$rc->{VALUES}->{FTPLOGIN}->{langvalue}->{rus},
+		$rc->{VALUES}->{FTPPASS}->{langvalue}->{rus},
+);
 
 my $conf=read_conf("${config_dir}/chconfig.json");
 
@@ -314,7 +302,7 @@ for my $c (@$conf) {
 	
     my %ec;
 
-	my $XMLstatus="btn-success";
+	my $VICstatus="btn-success";
     for (@viclist) {
     	my $cid=$cc->{$_}->{cid};
         my $arkey=$cc->{$_}->{arkey};
@@ -328,11 +316,11 @@ for my $c (@$conf) {
 			}
 			if ($dreps!=$d) {
 				log_error ("CONTAINER $cid CONCISTENCY PROBLEM DUR:$d <=> BDUR:$dreps");
-				$XMLstatus="btn-danger";
+				$VICstatus="btn-danger";
 				$ec{$cid}=1;	
 			}
 	    } else {	
-	    	$XMLstatus="btn-danger";
+	    	$VICstatus="btn-warning";
 		 	log_error ("PROBLEM REPLACE  $arkey $cid");
 		 	$ec{$cid}=1;
 	    }	 
@@ -354,8 +342,8 @@ for my $c (@$conf) {
 
     my $FTPstatus="btn-success";
 	$FTPstatus="btn-danger" if $ftp_err || $c_ftp_err; 
-	my $VICstatus="btn-success";
-	$VICstatus="btn-danger" if $broken_ttable; 
+	my $XMLstatus="btn-success";
+	$XMLstatus="btn-danger" if $broken_ttable; 
     my $CLFstatus="btn-success";
     $CLFstatus="btn-warning" if $changes;
     $CLFstatus="btn-danger"  if $clf_err;
@@ -685,6 +673,28 @@ sub file_get ($$$$) {
 
 }
 
+sub ftp_connect {
+
+	my ($serv,$login,$password)=@_;
+	my $ftp;
+
+	for my $try (1..3) {
+		$ftp=Net::FTP->new($serv,Passive=>1,Timeout=>5);
+		if ($ftp) {
+			last;
+		} else {
+			log_error ("Try $try. Cannot connect ftp: ".encode('UTF-8',decode('Windows-1251',$@)));
+		}	
+	}
+	return (undef, 1) unless $ftp;
+
+	unless ($ftp->login($login,$password)) {
+   		log_error("Cannot login: ". encode('UTF-8',decode('Windows-1251',$ftp->message)));
+   		return (undef,1);
+	}	  
+
+	return ($ftp,0);
+}
 
 sub log_message ($$) {
 	my ($type,$message)=@_;
