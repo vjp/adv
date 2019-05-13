@@ -438,6 +438,7 @@ sub ftp_connect {
 		if ($ftp) {
 			last;
 		} else {
+			sleep 5;
 			log_error ("Try $try. Cannot connect ftp: ".encode('UTF-8',decode('Windows-1251',$@)));
 		}	
 	}
