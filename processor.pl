@@ -29,6 +29,7 @@ my $clfdir=$rc->{VALUES}->{CLFDIR}->{langvalue}->{rus};
 my $debug_dir=$rc->{VALUES}->{DEBUGDIR}->{langvalue}->{rus};
 my $ftpdir=$rc->{VALUES}->{FTPDIR}->{langvalue}->{rus};
 my $offsetpname=$rc->{VALUES}->{OFFSETPNAME}->{langvalue}->{rus};
+my $clftypename=$rc->{VALUES}->{CLFTYPEPNAME}->{langvalue}->{rus};
 
 
 
@@ -71,15 +72,15 @@ for my $c (@$conf) {
     my $absoffset=$c->{VALUES}->{$offsetpname}->{value};
     my $lnum=$c->{VALUES}->{CLFLNUM}->{value};
     my $blockdelay=$c->{VALUES}->{BLOCKDELAY}->{value};
-    my $clfctype=$clftypes{$c->{VALUES}->{CLFSTYPE}->{value}};
-  
+
+    my $clfctype=$clftypes{$c->{VALUES}->{$clftypename}->{value}};
+
     my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
     my $acdur=$c->{VALUES}->{ACDUR}->{value};
     my $evbegoffset=$c->{VALUES}->{EVBEGOFFSET}->{value};
     my $acclfctype=$clftypes{$c->{VALUES}->{ACCLFSTYPE}->{value}};
     my $aclnum=$c->{VALUES}->{ACCLFLNUM}->{value};
    
-
     my $c_ftp_err;
       
 
