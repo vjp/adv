@@ -95,6 +95,7 @@ for my $c (@$conf) {
     my $changes;
     my $need_skip;
     my $broken_ttable;
+    my $broken_n_ttable;
     my $need_write_conf;
     my $now_sec=now_sec();
 
@@ -126,10 +127,10 @@ for my $c (@$conf) {
 			my $rdate_d=$2;
 			my $rdate_m=$3;
 			my $rdate_y=$4;
-			
+
 			my $arkey="R${cp}${rdate_y}${rdate_m}${rdate_d}";
-			
-			$tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json");
+			$tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json") unless $tk->{$arkey};
+
             if ($tk->{$arkey}) {
 			        	
    	        	my $ckey="${arkey}C${cid}";
@@ -202,7 +203,17 @@ for my $c (@$conf) {
 			} else { 
 				log_error ("ttable config read problem ${config_dir}/ttables/$arkey.json");
 				$broken_ttable=1;
-			}    			
+			}   
+
+			my $ddts=timelocal(0,0,0,${rdate_d},${rdate_m}-1,${rdate_y})+86400;  
+            my $narkey=strftime("R${cp}%Y%m%d",localtime($ddts));
+			$tk->{$narkey}=read_conf("${config_dir}/ttables/$narkey.json") unless $tk->{$narkey};
+    
+			unless  ($tk->{$narkey}) {
+				log_error ("ttable future config read problem ${config_dir}/ttables/$narkey.json");
+				$broken_n_ttable=1;
+			}          
+
 		}
 	}
     
@@ -294,6 +305,8 @@ for my $c (@$conf) {
 	$FTPstatus="btn-danger" if $ftp_err || $c_ftp_err; 
 	my $XMLstatus="btn-success";
 	$XMLstatus="btn-danger" if $broken_ttable; 
+	$XMLstatus="btn-warning" if $broken_n_ttable; 
+	
     my $CLFstatus="btn-success";
     $CLFstatus="btn-warning" if $changes;
     $CLFstatus="btn-danger"  if $clf_err;
