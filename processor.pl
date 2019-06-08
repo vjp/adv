@@ -304,9 +304,9 @@ for my $c (@$conf) {
     my $FTPstatus="btn-success";
 	$FTPstatus="btn-danger" if $ftp_err || $c_ftp_err; 
 	my $XMLstatus="btn-success";
-	$XMLstatus="btn-danger" if $broken_ttable; 
 	$XMLstatus="btn-warning" if $broken_n_ttable; 
-	
+	$XMLstatus="btn-danger" if $broken_ttable; 
+
     my $CLFstatus="btn-success";
     $CLFstatus="btn-warning" if $changes;
     $CLFstatus="btn-danger"  if $clf_err;
