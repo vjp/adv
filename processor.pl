@@ -246,6 +246,7 @@ for my $c (@$conf) {
     my %ec;
 
 	my $VICstatus="btn-success";
+	my %p;
     for (@viclist) {
     	my $cid=$cc->{$_}->{cid};
         my $arkey=$cc->{$_}->{arkey};
@@ -262,11 +263,17 @@ for my $c (@$conf) {
 				$VICstatus="btn-danger";
 				$ec{$cid}=1;	
 			}
+			if ($p{$cid}) {
+				log_error ("CONTAINER $cid DOUBLES");
+				$VICstatus="btn-danger";
+			    $ec{$cid}=1;	
+			}
 	    } else {	
 	    	$VICstatus="btn-warning";
 		 	log_error ("PROBLEM REPLACE  $arkey $cid");
 		 	$ec{$cid}=1;
-	    }	 
+	    }
+	    $p{$cid}=1;	 
     }
 
     my $clf_err;
@@ -318,7 +325,9 @@ for my $c (@$conf) {
 		<tbody>
 	);
 
-    my $counter=0; 
+    my $counter=0;
+
+    my %processed; 
 
     for my $rid (@viclist) {
         $counter++;
@@ -370,13 +379,13 @@ for my $c (@$conf) {
                   		end_mode="none"
                   		tape_type="digital">
             		</item>
-                ) if $changes && !$need_skip && !$clf_err;
+                ) if $changes && !$need_skip && !$clf_err && !$processed{$cid};
 
 			    $cr++;
 		    }
 		    print MF qq (</th></tr>) if $counter<4;	    
         } 		    
-	    
+	    $processed{$cid}=1;
 	    
 	}	
 		
