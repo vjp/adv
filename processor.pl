@@ -28,7 +28,7 @@ my $debug_dir=$rc->{VALUES}->{DEBUGDIR}->{langvalue}->{rus};
 my $ftpdir=$rc->{VALUES}->{FTPDIR}->{langvalue}->{rus};
 my $offsetpname=$rc->{VALUES}->{OFFSETPNAME}->{langvalue}->{rus};
 my $clftypename=$rc->{VALUES}->{CLFTYPEPNAME}->{langvalue}->{rus};
-
+my $next_tt_wait_delay=86400;
 
 
 my $mon_work_template=$htmldir.'mon.html.tmp';
@@ -206,13 +206,14 @@ for my $c (@$conf) {
 			}   
 
 			my $ddts=timelocal(0,0,0,${rdate_d},${rdate_m}-1,${rdate_y})+86400;  
-            my $narkey=strftime("R${cp}%Y%m%d",localtime($ddts));
-			$tk->{$narkey}=read_conf("${config_dir}/ttables/$narkey.json") unless $tk->{$narkey};
-    
-			unless  ($tk->{$narkey}) {
-				log_error ("ttable future config read problem ${config_dir}/ttables/$narkey.json");
-				$broken_n_ttable=1;
-			}          
+			if (($ddts - time) < $next_tt_wait_delay) {
+            	my $narkey=strftime("R${cp}%Y%m%d",localtime($ddts));
+				$tk->{$narkey}=read_conf("${config_dir}/ttables/$narkey.json") unless $tk->{$narkey};
+    			unless  ($tk->{$narkey}) {
+					log_error ("ttable future config read problem ${config_dir}/ttables/$narkey.json");
+					$broken_n_ttable=1;
+				}
+			}	          
 
 		}
 	}
