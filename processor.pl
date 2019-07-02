@@ -30,7 +30,7 @@ my $debug_dir=$rc->{VALUES}->{DEBUGDIR}->{langvalue}->{rus};
 my $ftpdir=$rc->{VALUES}->{FTPDIR}->{langvalue}->{rus};
 my $offsetpname=$rc->{VALUES}->{OFFSETPNAME}->{langvalue}->{rus};
 my $clftypename=$rc->{VALUES}->{CLFTYPEPNAME}->{langvalue}->{rus};
-
+my $next_tt_wait_delay=86400;
 
 
 my $mon_work_template=$htmldir.'mon.html.tmp';
@@ -111,6 +111,7 @@ for my $c (@$conf) {
     my $need_skip;
     my $ac_need_skip;
     my $broken_ttable;
+    my $broken_n_ttable;
     my $need_write_conf;
     my $now_sec=now_sec();
 
@@ -187,10 +188,10 @@ for my $c (@$conf) {
 			my $rdate_d=$2;
 			my $rdate_m=$3;
 			my $rdate_y=$4;
-			
+
 			my $arkey="R${cp}${rdate_y}${rdate_m}${rdate_d}";
-			
-			$tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json");
+			$tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json") unless $tk->{$arkey};
+
             if ($tk->{$arkey}) {
 			        	
    	        	my $ckey="${arkey}C${cid}";
@@ -260,7 +261,18 @@ for my $c (@$conf) {
 			} else { 
 				log_error ("ttable config read problem ${config_dir}/ttables/$arkey.json");
 				$broken_ttable=1;
-			}    			
+			}   
+
+			my $ddts=timelocal(0,0,0,${rdate_d},${rdate_m}-1,${rdate_y})+86400;  
+			if (($ddts - time) < $next_tt_wait_delay) {
+            	my $narkey=strftime("R${cp}%Y%m%d",localtime($ddts));
+				$tk->{$narkey}=read_conf("${config_dir}/ttables/$narkey.json") unless $tk->{$narkey};
+    			unless  ($tk->{$narkey}) {
+					log_error ("ttable future config read problem ${config_dir}/ttables/$narkey.json");
+					$broken_n_ttable=1;
+				}
+			}	          
+
 		}
 	}
     
@@ -304,6 +316,7 @@ for my $c (@$conf) {
     my %ec;
 
 	my $VICstatus="btn-success";
+	my %p;
     for (@viclist) {
     	my $cid=$cc->{$_}->{cid};
         my $arkey=$cc->{$_}->{arkey};
@@ -320,11 +333,17 @@ for my $c (@$conf) {
 				$VICstatus="btn-danger";
 				$ec{$cid}=1;	
 			}
+			if ($p{$cid}) {
+				log_error ("CONTAINER $cid DOUBLES");
+				$VICstatus="btn-danger";
+			    $ec{$cid}=1;	
+			}
 	    } else {	
 	    	$VICstatus="btn-warning";
 		 	log_error ("PROBLEM REPLACE  $arkey $cid");
 		 	$ec{$cid}=1;
-	    }	 
+	    }
+	    $p{$cid}=1;	 
     }
 
     my $clf_err;
@@ -344,7 +363,9 @@ for my $c (@$conf) {
     my $FTPstatus="btn-success";
 	$FTPstatus="btn-danger" if $ftp_err || $c_ftp_err; 
 	my $XMLstatus="btn-success";
+	$XMLstatus="btn-warning" if $broken_n_ttable; 
 	$XMLstatus="btn-danger" if $broken_ttable; 
+
     my $CLFstatus="btn-success";
     $CLFstatus="btn-warning" if $changes;
     $CLFstatus="btn-danger"  if $clf_err;
@@ -376,7 +397,9 @@ for my $c (@$conf) {
 		<tbody>
 	);
 
-    my $counter=0; 
+    my $counter=0;
+
+    my %processed; 
 
     for my $rid (@viclist) {
         $counter++;
@@ -428,13 +451,13 @@ for my $c (@$conf) {
                   		end_mode="none"
                   		tape_type="digital">
             		</item>
-                ) if $changes && !$need_skip && !$clf_err;
+                ) if $changes && !$need_skip && !$clf_err && !$processed{$cid};
 
 			    $cr++;
 		    }
 		    print MF qq (</th></tr>) if $counter<4;	    
         } 		    
-	    
+	    $processed{$cid}=1;
 	    
 	}	
 		
