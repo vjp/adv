@@ -147,20 +147,20 @@ for my $c (@$conf) {
 
 
      	if ($agelabel) {
-     		my $h_str=row_parse($row,$cdelta,$absoffset,$evbegoffset);
+     		my $h_str=row_parse($row,$absoffset+$evbegoffset);
      		if ($h_str->{'grp'}) {
      			my $cid=$h_str->{'id'};
-     			my $dtstr=strftime("%Y%m%d",localtime($h_str->{ts}));
+     			my $dtstr=strftime("%Y%m%d",localtime($h_str->{'ts'}));
  				my $acckey="R${cp}${dtstr}C$cid";
 				push (@acviclist,$acckey);
             	$accc->{$acckey}=read_conf("${config_dir}/accontainers/$acckey.json");
 				$accc->{$acckey}->{cid}=$cid;
-				$accc->{$acckey}->{cnouttime}=$h_str->{cnouttime}; 
-				$accc->{$acckey}->{crealdate}=strftime("%Y-%m-%d",localtime($h_str->{ts}));
+				$accc->{$acckey}->{cnouttime}=$h_str->{'cnouttime'}; 
+				$accc->{$acckey}->{crealdate}=strftime("%Y-%m-%d",localtime($h_str->{'ts'}));
  				$accc->{$acckey}->{grp}=$h_str->{'grp'};
 
-     			$accc->{$acckey}->{startts}= $h_str->{ts} - $blockdelay;
-                $accc->{$acckey}->{endts}  = $h_str->{ts} + $acdur;
+     			$accc->{$acckey}->{startts}= $h_str->{'ts'} - $blockdelay;
+                $accc->{$acckey}->{endts}  = $h_str->{'ts'} + $acdur;
 
             	my $rawstr=$accc->{$acckey}->{craw};
 
@@ -639,8 +639,29 @@ sub al_names ($) {
 }
 
 
-sub row_parse ($$$$) {
-	my ($row,$cdelta,$absoffset,$evbegoffset) = @_;
+sub calc_time ($$$) {
+	my ($timestr,$datestr,$offset)=@_;
+
+    my ($thr,$tmm,$tsec,$tfr)=split(/:/,$timestr);
+    my $sfr=$tfr+$tsec*25+$tmm*25*60+$thr*25*60*60 + $offset;
+
+	my $tt_hr=int($sfr/(25*60*60));
+    $sfr-=$tt_hr*25*60*60;
+    my $tt_mn=int($sfr/(25*60));
+    $sfr-=$tt_mn*25*60;
+    my $tt_ss=int($sfr/25);
+    $sfr-=$tt_ss*25;
+
+    my ($vm,$vd,$vy)=split(/\//,$datestr);
+    my $ts=timelocal($tt_ss,$tt_mn,$tt_hr,$vd,$vm-1,$vy);  
+    $ts+=86400 if $tt_hr<3; 
+  
+    return (sprintf("%02d:%02d:%02d:%02d",$tt_hr,$tt_mn,$tt_ss,$sfr),$ts);    
+}
+
+
+sub row_parse ($$) {
+	my ($row,$offset) = @_;
 	my $r;
     $r->{'date'}=	substr($row,  9, 8);
     $r->{'time'}=	substr($row, 18,11);
@@ -650,28 +671,7 @@ sub row_parse ($$$$) {
 	$r->{'grp'}=	substr($row,116,16);
 	$r->{'name'}=	substr($row,183,66);
 	$r->{$_}=~s/\s+$// for keys %{$r};
-
-
- 	my ($thr,$tmm,$tsec,$tfr)=split(/:/,$r->{'time'});
-    my $sfr=$tfr+$tsec*25+$tmm*25*60+$thr*25*60*60;
-    $sfr-=$cdelta;
-    $sfr+=$absoffset;
-
-    $sfr+=$evbegoffset;
-            
-    my $tt_hr=int($sfr/(25*60*60));
-    $sfr-=$tt_hr*25*60*60;
-    my $tt_mn=int($sfr/(25*60));
-    $sfr-=$tt_mn*25*60;
-    my $tt_ss=int($sfr/25);
-    $sfr-=$tt_ss*25;
-
-	my ($vm,$vd,$vy)=split(/\//,$r->{'date'});
-    my $ts=timelocal($tt_ss,$tt_mn,$tt_hr,$vd,$vm-1,$vy);  
-    $ts+=86400 if $tt_hr<3; 
-    $r->{'ts'}=$ts;
-    $r->{'cnouttime'}=sprintf("%02d:%02d:%02d:%02d",$tt_hr,$tt_mn,$tt_ss,$sfr);     
-
+    ($r->{'cnouttime'},$r->{'ts'}) = calc_time($r->{'time'},$r->{'date'},$offset);
 	return $r;
 }
 
