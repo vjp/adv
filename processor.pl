@@ -150,7 +150,7 @@ for my $c (@$conf) {
      		my $h_str=row_parse($row,$absoffset+$evbegoffset);
      		if ($h_str->{'grp'}) {
      			my $cid=$h_str->{'id'};
-     			my $dtstr=strftime("%Y%m%d",localtime($h_str->{'ts'}));
+     			my $dtstr=strftime("%Y%m%d%H%M%S",localtime($h_str->{'ts'}));
  				my $acckey="R${cp}${dtstr}C$cid";
 				push (@acviclist,$acckey);
             	$accc->{$acckey}=read_conf("${config_dir}/accontainers/$acckey.json");
