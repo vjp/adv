@@ -130,6 +130,7 @@ for my $c (@$conf) {
     	}	
     }
 
+    my $can_start=0;
 
    	for my $row (@lines) {
    		my @recs=split (/\s+/,$row);
@@ -143,8 +144,11 @@ for my $c (@$conf) {
 		$h->{'btcode'}=shift @recs;
 		$h->{'id'}=shift @recs;
   		$h->{'name'}=join(' ',@recs);
-     	next if $h->{'time'} eq 'ON-AIR';
-
+     	if ($h->{'time'} eq 'ON-AIR') {
+     		$can_start=1;
+     		next;
+     	}
+     	next unless $can_start;	
 
      	if ($agelabel) {
      		my $h_str=row_parse($row,$absoffset+$evbegoffset);
