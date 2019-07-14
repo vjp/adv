@@ -545,7 +545,7 @@ for my $c (@$conf) {
 		for (@acviclist) {
 			my $cid=$accc->{$_}->{cid};
 			unless ($ac_names->{$accc->{$_}->{grp}}) {
-				log_error ("CONTAINER $cid UNKNOWN AGE MARKER accc->{$_}->{grp}");
+				log_error ("CONTAINER $cid UNKNOWN AGE MARKER $accc->{$_}->{grp}");
 				$VICstatus="btn-warning";
 				$ec{$cid}=1;	
 			}
