@@ -321,6 +321,14 @@ for my $c (@$conf) {
 
 	my $VICstatus="btn-success";
 	my %p;
+	for (@acviclist) {
+		my $cid=$accc->{$_}->{cid};
+		unless ($ac_names->{$accc->{$_}->{grp}}) {
+			log_error ("CONTAINER $cid UNKNOWN AGE MARKER accc->{$_}->{grp}");
+			$VICstatus="btn-danger";
+			$ec{$cid}=1;	
+		}
+	}	
     for (@viclist) {
     	my $cid=$cc->{$_}->{cid};
         my $arkey=$cc->{$_}->{arkey};
@@ -599,7 +607,7 @@ for my $c (@$conf) {
                   		end_mode="none"
                   		tape_type="digital">
             		</item>
-             ) if $acchanges && !$ac_need_skip && !$clf_err;
+             ) if $acchanges && !$ac_need_skip && !$clf_err && $ac_names->{$accc->{$rid}->{grp}};
 
 	    }	
 
