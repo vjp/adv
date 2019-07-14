@@ -321,14 +321,6 @@ for my $c (@$conf) {
 
 	my $VICstatus="btn-success";
 	my %p;
-	for (@acviclist) {
-		my $cid=$accc->{$_}->{cid};
-		unless ($ac_names->{$accc->{$_}->{grp}}) {
-			log_error ("CONTAINER $cid UNKNOWN AGE MARKER accc->{$_}->{grp}");
-			$VICstatus="btn-danger";
-			$ec{$cid}=1;	
-		}
-	}	
     for (@viclist) {
     	my $cid=$cc->{$_}->{cid};
         my $arkey=$cc->{$_}->{arkey};
@@ -549,6 +541,16 @@ for my $c (@$conf) {
     	$CLFstatus="btn-warning" if $acchanges;
     	$CLFstatus="btn-danger"  if $clf_err;
     	$SKYstatus="btn-warning" if $ac_need_skip;
+
+		for (@acviclist) {
+			my $cid=$accc->{$_}->{cid};
+			unless ($ac_names->{$accc->{$_}->{grp}}) {
+				log_error ("CONTAINER $cid UNKNOWN AGE MARKER accc->{$_}->{grp}");
+				$VICstatus="btn-warning";
+				$ec{$cid}=1;	
+			}
+		}	
+
 
 		print MF qq(
 	    	<div class="center gray_bkgrnd"><div class="btn-group btn-group-justified" role="group" aria-label="...">
