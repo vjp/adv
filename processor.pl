@@ -332,15 +332,15 @@ for my $c (@$conf) {
 			    my $af=$_->{VALUES}->{ADDFRAMES}->{value};
 			    $dreps+=$dur*25+$af;
 			}
+			if ($p{$cid}) {
+				log_error ("CONTAINER $cid DOUBLES");
+				$VICstatus="btn-warning";
+			    $ec{$cid}=1;	
+			}
 			if ($dreps!=$d) {
 				log_error ("CONTAINER $cid CONCISTENCY PROBLEM DUR:$d <=> BDUR:$dreps");
 				$VICstatus="btn-danger";
 				$ec{$cid}=1;	
-			}
-			if ($p{$cid}) {
-				log_error ("CONTAINER $cid DOUBLES");
-				$VICstatus="btn-danger";
-			    $ec{$cid}=1;	
 			}
 	    } else {	
 	    	$VICstatus="btn-warning";
