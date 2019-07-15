@@ -685,6 +685,7 @@ sub row_parse ($$) {
 	$r->{'grp'}=	substr($row,116,16);
 	$r->{'name'}=	substr($row,183,66);
 	$r->{$_}=~s/\s+$// for keys %{$r};
+	$r->{'grp'}=~s/^(\S_\d+).+$/$1/;
     ($r->{'cnouttime'},$r->{'ts'}) = calc_time($r->{'time'},$r->{'date'},$offset);
 	return $r;
 }
