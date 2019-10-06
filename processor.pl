@@ -56,7 +56,7 @@ my %clftypes = (
 
 for my $c (@$conf) {
 
-	my $ck=read_conf("${config_dir}/channels/$c->{KEY}.json");
+	my $ck=read_conf("${config_dir}/channels/$c->{KEY}.json");  #LOCAL CONFIG
     my $index_iterator=$ck->{advindex} || 0;
     my $arkey_old=$ck->{activer};
 	my $vic_index=0;
@@ -109,8 +109,11 @@ for my $c (@$conf) {
 
     my @viclist;
     my @acviclist;
+    
     my $changes;
     my $acchanges;
+    my $ftchanges;
+
     my $need_skip;
     my $ac_need_skip;
     my $broken_ttable;
@@ -131,6 +134,13 @@ for my $c (@$conf) {
          	log_warn ("AC ACTIVE CONTAINER SKIP PLAYLIST UPLOAD  [ $ck->{acstartts} < $now_ts > $ck->{acendts} ] ");
           	$ac_need_skip=1; 	
     	}	
+    }
+
+    if ($fullttable) {
+    	unless ($ck->{ttindex}) {
+    		 log_warn ("FT NO CURRENT INDEX NEED PLAYLIST GENERATE");
+    		 $ftchanges=1;
+    	}
     }
 
     my $can_start=0;
