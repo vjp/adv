@@ -76,6 +76,9 @@ for my $c (@$conf) {
     my $clfctype=$clftypes{$c->{VALUES}->{$clftypename}->{value}};
 
     my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
+    my $fullttable=$c->{VALUES}->{FULLTTABLE}->{value};
+    
+
     my $acdur=$c->{VALUES}->{ACDUR}->{value};
     my $evbegoffset=$c->{VALUES}->{EVBEGOFFSET}->{value};
     my $acclfctype=$clftypes{$c->{VALUES}->{ACCLFSTYPE}->{value}};
@@ -482,6 +485,87 @@ for my $c (@$conf) {
 		}
 
 	}	
+
+	if ($fullttable) {
+		print MF qq(
+         <div class="column"><div class="container">
+	     <h3 style="color:#D3D3D3;" class="center gray_bkgrnd">$c->{NAME}  (FULLTABLE)</h3>
+		);  
+
+		$XMLstatus="btn-success";
+		$VICstatus="btn-success";
+		$CLFstatus="btn-success";
+
+   		print MF qq(
+	    	<div class="center gray_bkgrnd"><div class="btn-group btn-group-justified" role="group" aria-label="...">
+            <div class="btn-group" role="group">
+	        <button type="button" class="btn btn-default $FTPstatus">FTP</button>
+	        <button type="button" class="btn btn-default $XMLstatus">XML</button>
+		  	<button type="button" class="btn btn-default $VICstatus">VIC</button>
+		  	<button type="button" class="btn btn-default $CLFstatus">CLF</button>
+		  	<button type="button" class="btn btn-default $SKYstatus">SKY</button>
+	       </div>
+	       </div></div>   
+		);
+ 
+		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">LAST XML: </h3>);  
+		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">LAST CLF: </h3>);  
+
+    	print MF qq( 
+			<div class="card gray_bkgrnd">
+			<table class="table table-bordered table-striped table-dark" >
+			<thead><tr class='blue_bkgrnd'>
+					<th>ID</th><th>Start time</th><th>Duration</th>
+			</tr></thead>
+			<tbody>
+		);
+
+ 		for my $rid (@viclist) {
+        	$counter++;
+
+  			my $cid=$cc->{$rid}->{cid};
+	    	my $arkey=$cc->{$rid}->{arkey};
+
+        	my $dr=$cc->{$rid}->{dur};
+        	$dr=~s/^00://; 
+
+        	my $cl=$ec{$cid}?'class="repdanger"':'';  
+	    	print MF qq (
+	    		<tr>
+            	<th $cl>$cid</th>
+	        	<th $cl>$cc->{$rid}->{crealdate} $cc->{$rid}->{cnouttime}</th>
+	        	<th $cl>$dr</th>   
+	    		</tr>
+	    	);
+	  
+        	if ($tk->{$arkey}->{c}->{$cid}->{reps}) {
+        		my $cr=0;
+        		print MF qq (<tr><th colspan='3' class="repcell">) if $counter<4;
+		    	for (@{$tk->{$arkey}->{c}->{$cid}->{reps}}) {
+			    	my $k=$_->{VALUES}->{SHNAME}->{langvalue}->{rus};
+			    	my $dur=$_->{VALUES}->{REPDUR}->{value};
+			    	my $af=$_->{VALUES}->{ADDFRAMES}->{value};
+			    	my $framedur=$dur*25+$af;
+			    	$dur.=".$af" if $af;
+			 
+			    	print MF qq ($k : $dur сек <br/>) if $counter<4; 
+
+                	my $itemtype=$cr?'Seq':$clfctype;	
+                	$_->{NAME}=~s/"/&quot;/g; 
+ 
+                	$cr++;
+		    	}
+		    	print MF qq (</th></tr>) if $counter<4;	    
+        	} 		    
+		}
+    	print MF qq(
+	  		</tbody></table>
+  	  		</div> 
+	  		</div></div>
+		);
+			
+
+	}
 
 
 	if ($agelabel) {
