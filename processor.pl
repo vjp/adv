@@ -114,6 +114,9 @@ for my $c (@$conf) {
     my $acchanges;
     my $ftchanges;
 
+    my $ftindex;
+    my $ftdata;
+
     my $need_skip;
     my $ac_need_skip;
     my $broken_ttable;
@@ -137,7 +140,8 @@ for my $c (@$conf) {
     }
 
     if ($fullttable) {
-    	unless ($ck->{ttindex}) {
+    	$ftindex=$ck->{ttindex};
+    	unless ($ftindex) {
     		 log_warn ("FT NO CURRENT INDEX NEED PLAYLIST GENERATE");
     		 $ftchanges=1;
     	}
@@ -210,7 +214,12 @@ for my $c (@$conf) {
 			$tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json") unless $tk->{$arkey};
 
             if ($tk->{$arkey}) {
-			        	
+
+            	if ($ftchanges && !$ftindex) {
+            		$ftdata=$tk->{$arkey};
+					$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'}; 
+				}	
+
    	        	my $ckey="${arkey}C${cid}";
 				push (@viclist,$ckey);
             	$cc->{$ckey}=read_conf("${config_dir}/containers/$ckey.json");
@@ -587,6 +596,9 @@ for my $c (@$conf) {
 				config_dir=>$config_dir,
 				cp=>$cp,
 				vicname=>$vicname,	
+				ftindex=>$ftindex,
+				ftdata=>$ftdata,
+				clfctype=>$clfctype,
 			});
 		}	
 
@@ -754,24 +766,74 @@ log_info("PROCESSING ENDED");
 #####################################
 sub generate_ftt_playlist ($) {
 	my ($cf)=@_;
+	my $err;
 	my $ffcname="$cf->{cpath}/fullplaylist.clf";
 	log_warn ("FTCLF GENERATE $ffcname");	
     my $ccf=open (XCLF,">$ffcname");
-    if ($ccf) {
-    	print XCLF qq(<?xml version="1.0" encoding="UTF-8"?>
-        	<castlist fps="25" list_upload_time="$cf->{nowjd}" list_upload_layer="$cf->{lnum}">
-    	);
-    	print XCLF qq(</castlist>);
-		close XCLF;
-		#if ($cf->{debug}) {
-        #	my $filename=$cf->{cp}.strftime("%Y%m%d-%H%M%S_ft.clf",localtime());
-		#	copy($ffcname,"$cf->{debug_dir}/${filename}");
-		#	my $vfilename=$cf->{cp}.strftime("%Y%m%d-%H%M%S.vic",localtime());	
-		#	copy("$cf->{config_dir}/channels/${vicname}","$cf->{debug_dir}/${vfilename}");
-		#}
-    } else {
+    unless ($ccf) {
     	log_error ("clf error file:$ffcname error:$!");
-	} 	
+    	$err->{'xml'}=1;
+    	return ($err);
+    }
+
+    print XCLF qq(<?xml version="1.0" encoding="UTF-8"?>
+    	<castlist fps="25" list_upload_time="$cf->{nowjd}" list_upload_layer="$cf->{lnum}">
+    );
+    my @ftlist=split(';',$cf->{ftindex});
+    for my $cid (@ftlist) {
+        my $cr=0;	  
+        my @reps;
+        if (ref $cf->{ftdata}->{c}->{$cid}->{reps} eq 'ARRAY') {
+        	@reps=@{$cf->{ftdata}->{c}->{$cid}->{reps}}
+        } elsif (ref $cf->{ftdata}->{c}->{'XX'}->{reps} eq 'ARRAY') {
+        	log_error ("FT GENERATE ERROR > $cid");
+        	@reps=@{$cf->{ftdata}->{c}->{'XX'}->{reps}};
+        	$err->{'xml'}=1;
+        } else {
+        	log_error ("CANT GENERATE DANGER CONTAINER");
+        	$err->{'xml'}=1;
+        }
+        
+        for my $rp (@reps) {
+			my $k=$rp->{VALUES}->{SHNAME}->{langvalue}->{rus};
+			my $dur=$rp->{VALUES}->{REPDUR}->{value};
+			my $af=$rp->{VALUES}->{ADDFRAMES}->{value};
+			my $framedur=$dur*25+$af;
+			$dur.=".$af" if $af;
+			 
+            my $itemtype=$cr?'Seq':$cf->{clfctype};	
+            $rp->{NAME}=~s/"/&quot;/g; 
+ 
+            print XCLF qq (
+                <item uri="$k"
+        		  	start_type="$itemtype"
+        		  	start_time=""
+                  	start_date=""
+                  	tc_orig=""
+                  	in_point="0"
+                  	out_point="$framedur"
+                  	duration="$framedur"
+                    trans_mode="Cut"
+                    trans_speed="Fast"
+                    lead_out="0"
+                  	title="$rp->{NAME}"
+                  	group="$cid"
+                  	end_mode="none"
+                  	tape_type="digital">
+            	</item>
+            );
+			$cr++;
+		}
+	}	
+    print XCLF qq(</castlist>);
+	close XCLF;
+	#if ($cf->{debug}) {
+    #	my $filename=$cf->{cp}.strftime("%Y%m%d-%H%M%S_ft.clf",localtime());
+	#	copy($ffcname,"$cf->{debug_dir}/${filename}");
+	#	my $vfilename=$cf->{cp}.strftime("%Y%m%d-%H%M%S.vic",localtime());	
+	#	copy("$cf->{config_dir}/channels/${vicname}","$cf->{debug_dir}/${vfilename}");
+	#}
+	return $err;
 }
 
 
