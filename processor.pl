@@ -520,6 +520,7 @@ for my $c (@$conf) {
 			<tbody>
 		);
 
+        $counter=0;
  		for my $rid (@viclist) {
         	$counter++;
 
@@ -563,7 +564,7 @@ for my $c (@$conf) {
   	  		</div> 
 	  		</div></div>
 		);
-			
+
 
 	}
 
