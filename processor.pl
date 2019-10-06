@@ -505,6 +505,7 @@ for my $c (@$conf) {
 		$XMLstatus="btn-success";
 		$VICstatus="btn-success";
 		$CLFstatus="btn-success";
+		$CLFstatus="btn-warning" if $ftchanges;
 
    		print MF qq(
 	    	<div class="center gray_bkgrnd"><div class="btn-group btn-group-justified" role="group" aria-label="...">
@@ -574,6 +575,20 @@ for my $c (@$conf) {
   	  		</div> 
 	  		</div></div>
 		);
+
+
+		if ($ftchanges && !$need_skip) {
+			generate_ftt_playlist ({
+				cpath=>$cpath,
+				nowjd=>$nowjd,
+				lnum=>$lnum,
+				debug=>$debug,
+				debug_dir=>$debug_dir,
+				config_dir=>$config_dir,
+				cp=>$cp,
+				vicname=>$vicname,	
+			});
+		}	
 
 
 	}
@@ -737,6 +752,31 @@ log_info("PROCESSING ENDED");
 
 
 #####################################
+sub generate_ftt_playlist ($) {
+	my ($cf)=@_;
+	my $ffcname="$cf->{cpath}/fullplaylist.clf";
+	log_warn ("FTCLF GENERATE $ffcname");	
+    my $ccf=open (XCLF,">$ffcname");
+    if ($ccf) {
+    	print XCLF qq(<?xml version="1.0" encoding="UTF-8"?>
+        	<castlist fps="25" list_upload_time="$cf->{nowjd}" list_upload_layer="$cf->{lnum}">
+    	);
+    	print XCLF qq(</castlist>);
+		close XCLF;
+		#if ($cf->{debug}) {
+        #	my $filename=$cf->{cp}.strftime("%Y%m%d-%H%M%S_ft.clf",localtime());
+		#	copy($ffcname,"$cf->{debug_dir}/${filename}");
+		#	my $vfilename=$cf->{cp}.strftime("%Y%m%d-%H%M%S.vic",localtime());	
+		#	copy("$cf->{config_dir}/channels/${vicname}","$cf->{debug_dir}/${vfilename}");
+		#}
+    } else {
+    	log_error ("clf error file:$ffcname error:$!");
+	} 	
+}
+
+
+
+
 sub al_names ($) {
 	my ($config_dir)=@_;
 	my $h;
