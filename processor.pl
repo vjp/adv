@@ -77,6 +77,7 @@ for my $c (@$conf) {
 
     my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
     my $fullttable=$c->{VALUES}->{FULLTTABLE}->{value};
+    my $ftlnum=$c->{VALUES}->{FTCLFLNUM}->{value};
     
 
     my $acdur=$c->{VALUES}->{ACDUR}->{value};
@@ -590,7 +591,7 @@ for my $c (@$conf) {
 			generate_ftt_playlist ({
 				cpath=>$cpath,
 				nowjd=>$nowjd,
-				lnum=>$lnum,
+				lnum=>$ftlnum,
 				debug=>$debug,
 				debug_dir=>$debug_dir,
 				config_dir=>$config_dir,
