@@ -667,10 +667,22 @@ sub calc_time ($$$) {
     $sfr-=$tt_ss*25;
 
     my ($vm,$vd,$vy)=split(/\//,$datestr);
+
+    my $next_day;
+    if  ($tt_hr>23) {
+    	$tt_hr=0;
+    	$next_day=1;
+    }
+
     my $ts=timelocal($tt_ss,$tt_mn,$tt_hr,$vd,$vm-1,$vy);  
     $ts+=86400 if $tt_hr<3; 
-  
-    return (sprintf("%02d:%02d:%02d:%02d",$tt_hr,$tt_mn,$tt_ss,$sfr),$ts);    
+    $ts+=86400 if $next_day;
+
+    my $dstr=sprintf("%02d:%02d:%02d:%02d",$tt_hr,$tt_mn,$tt_ss,$sfr);
+
+    log_warn ("NEXT DAY :::: T:$timestr D:$datestr O:$offset) => $tt_hr:$tt_mn:$tt_ss ($dstr)") if $next_day;
+
+    return ($dstr,$ts);    
 }
 
 
