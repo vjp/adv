@@ -209,10 +209,10 @@ for my $c (@$conf) {
      		my (undef, $ttb_ts) = calc_time($h->{'time'},$h->{'date'});
      	 	log_info ("FOUND START TTABLE ". scalar localtime ($ttb_ts));
 			my $now_ts=time;
-			if ($now_ts>($ttb_ts-300) && $tt_day ne $ck->{'ttday'}) {
-				$tt_day=strftime("%Y%m%d",localtime($ttb_ts));
-     	
-				log_warn ("need switch ttday");
+			my $break_day=strftime("%Y%m%d",localtime($ttb_ts));
+			if ($now_ts>($ttb_ts-300) && $break_day ne $ck->{'ttday'}) {
+				$tt_day=$break_day;
+				log_warn ("need switch ttday > $tt_day");
 				$ftchanges=1;
 			}
 
@@ -231,11 +231,7 @@ for my $c (@$conf) {
 
             if ($tk->{$arkey}) {
 
-            	if ($ftchanges) {
-            		$ftdata=$tk->{$arkey};
-					$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'} unless $ftindex; 
-				}	
-
+         
    	        	my $ckey="${arkey}C${cid}";
 				push (@viclist,$ckey);
             	$cc->{$ckey}=read_conf("${config_dir}/containers/$ckey.json");
@@ -604,6 +600,17 @@ for my $c (@$conf) {
 
 		if ($ftchanges && !$need_skip) {
 
+			$ck->{'ttday'}=$tt_day if $tt_day;
+			$ck->{'ttday'}=strftime("%Y%m%d",localtime(time)) unless $ck->{'ttday'};
+            
+            my $arkey="R${cp}$ck->{'ttday'}";
+
+            if ($tt_day || !$ftindex) {
+            	$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'};
+            	log_warn ("RESET TTINDEX: $arkey: $ftindex");	
+            }
+          
+            log_warn ("GENERATE FTTABLE: $arkey");
 			generate_ftt_playlist ({
 				cpath=>$cpath,
 				nowjd=>$nowjd,
@@ -614,15 +621,12 @@ for my $c (@$conf) {
 				cp=>$cp,
 				vicname=>$vicname,	
 				ftindex=>$ftindex,
-				ftdata=>$ftdata,
+				ftdata=>$tk->{$arkey},
 				clfctype=>$clfctype,
+				dtkey=>$arkey,
 			});
 
-			$ck->{'ttday'}=$tt_day if $tt_day;
-			$ck->{'ftindex'}=$ftindex;
-
-			$ck->{'ttday'}=strftime("%Y%m%d",localtime(time)) unless $ck->{'ttday'};
-     		
+			$ck->{'ftindex'}=$ftindex;     		
 			write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
 			
 
@@ -794,7 +798,7 @@ sub generate_ftt_playlist ($) {
 	my ($cf)=@_;
 	my $err;
 	my $ffcname="$cf->{cpath}/fullplaylist.clf";
-	log_warn ("FTCLF GENERATE $ffcname");	
+
     my $ccf=open (XCLF,">$ffcname");
     unless ($ccf) {
     	log_error ("clf error file:$ffcname error:$!");
@@ -806,6 +810,16 @@ sub generate_ftt_playlist ($) {
     	<castlist fps="25" list_upload_time="$cf->{nowjd}" list_upload_layer="$cf->{lnum}">
     );
     my @ftlist=split(';',$cf->{ftindex});
+
+	log_warn ("FTCLF GENERATE $ffcname $ftlist[0]..$ftlist[-1]");	
+
+	my ($vy,$vm,$vd)=($cf->{dtkey}=~/(\d{4})(\d{2})(\d{2})/);
+	my $tsst=timelocal(0,0,0,$vd,$vm-1,$vy);  
+   
+   
+	my $prev;
+	my $etime;
+
     for my $cid (@ftlist) {
         my $cr=0;	  
         my @reps;
@@ -820,10 +834,25 @@ sub generate_ftt_playlist ($) {
         	$err->{'xml'}=1;
         }
         
+        (my $pth,my $ptm)=split(/:/,$cf->{ftdata}->{c}->{$cid}->{VALUES}->{PTIMECODE}->{langvalue}->{rus});
+        my $xtime=$tsst+$pth*3600+$ptm*60;
+		if ($xtime<$prev) {
+			$tsst+=86400; 
+			$xtime+=86400;
+		} 	
+		$prev=$xtime;
+		if ($xtime<$etime) {
+			$xtime=$etime+300;
+		}
+	
         for my $rp (@reps) {
 			my $k=$rp->{VALUES}->{SHNAME}->{langvalue}->{rus};
 			my $dur=$rp->{VALUES}->{REPDUR}->{value};
 			my $af=$rp->{VALUES}->{ADDFRAMES}->{value};
+			
+            my $rd=strftime("%Y-%m-%d",localtime($xtime));
+            my $rt=strftime("%H:%M:%S:00",localtime($xtime));
+
 			my $framedur=$dur*25+$af;
 			$dur.=".$af" if $af;
 			 
@@ -833,8 +862,8 @@ sub generate_ftt_playlist ($) {
             print XCLF qq (
                 <item uri="$k"
         		  	start_type="$itemtype"
-        		  	start_time=""
-                  	start_date=""
+        		  	start_time="$rt"
+                  	start_date="$rd"
                   	tc_orig=""
                   	in_point="0"
                   	out_point="$framedur"
@@ -849,6 +878,8 @@ sub generate_ftt_playlist ($) {
             	</item>
             );
 			$cr++;
+			$xtime+=$dur;
+			$etime=$xtime;
 		}
 	}	
     print XCLF qq(</castlist>);
