@@ -141,7 +141,7 @@ for my $c (@$conf) {
     }
 
     if ($fullttable) {
-    	$ftindex=$ck->{ttindex};
+    	$ftindex=$ck->{'ftindex'};
     	unless ($ftindex) {
     		 log_warn ("FT NO CURRENT INDEX NEED PLAYLIST GENERATE");
     		 $ftchanges=1;
@@ -150,6 +150,7 @@ for my $c (@$conf) {
 
     my $can_start=0;
     my $tt_break;
+    my $tt_day;
 
    	for my $row (@lines) {
    		my @recs=split (/\s+/,$row);
@@ -204,16 +205,15 @@ for my $c (@$conf) {
      		}
      	}
 
-     	if ($h->{'index'} eq 'X') {
+     	if ($h->{'index'} eq 'X' && $fullttable) {
      		my (undef, $ttb_ts) = calc_time($h->{'time'},$h->{'date'});
-     	    my $ttday=strftime("%Y%m%d",localtime($ttb_ts));
-     		
-     		log_info ("FOUND START TTABLE ($ttday:$ck->{'ttday'}): ". scalar localtime ($ttb_ts));
+     	 	log_info ("FOUND START TTABLE ". scalar localtime ($ttb_ts));
 			my $now_ts=time;
-			if ($now_ts>($ttb_ts-300) && $ttday ne $ck->{'ttday'}) {
+			if ($now_ts>($ttb_ts-300) && $tt_day ne $ck->{'ttday'}) {
+				$tt_day=strftime("%Y%m%d",localtime($ttb_ts));
+     	
 				log_warn ("need switch ttday");
-				$ck->{'ttday'}=$ttday;
-				$need_write_conf=1;
+				$ftchanges=1;
 			}
 
      		$tt_break=1;
@@ -603,6 +603,7 @@ for my $c (@$conf) {
 
 
 		if ($ftchanges && !$need_skip) {
+
 			generate_ftt_playlist ({
 				cpath=>$cpath,
 				nowjd=>$nowjd,
@@ -616,6 +617,15 @@ for my $c (@$conf) {
 				ftdata=>$ftdata,
 				clfctype=>$clfctype,
 			});
+
+			$ck->{'ttday'}=$tt_day if $tt_day;
+			$ck->{'ftindex'}=$ftindex;
+
+			$ck->{'ttday'}=strftime("%Y%m%d",localtime(time)) unless $ck->{'ttday'};
+     		
+			write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
+			
+
 		}	
 
 
