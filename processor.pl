@@ -149,6 +149,7 @@ for my $c (@$conf) {
     }
 
     my $can_start=0;
+    my $tt_break;
 
    	for my $row (@lines) {
    		my @recs=split (/\s+/,$row);
@@ -203,6 +204,20 @@ for my $c (@$conf) {
      		}
      	}
 
+     	if ($h->{'index'} eq 'X') {
+     		my (undef, $ttb_ts) = calc_time($h->{'time'},$h->{'date'});
+     	    my $ttday=strftime("%Y%m%d",localtime($ttb_ts));
+     		
+     		log_info ("FOUND START TTABLE ($ttday:$ck->{'ttday'}): ". scalar localtime ($ttb_ts));
+			my $now_ts=time;
+			if ($now_ts>($ttb_ts-300) && $ttday ne $ck->{'ttday'}) {
+				log_warn ("need switch ttday");
+				$ck->{'ttday'}=$ttday;
+				$need_write_conf=1;
+			}
+
+     		$tt_break=1;
+     	}
 
 		if ($h->{'name'}=~/К-р(\d+) \((\d\d)(\d\d)(\d\d\d\d)\)/) {
 
@@ -216,9 +231,9 @@ for my $c (@$conf) {
 
             if ($tk->{$arkey}) {
 
-            	if ($ftchanges && !$ftindex) {
+            	if ($ftchanges) {
             		$ftdata=$tk->{$arkey};
-					$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'}; 
+					$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'} unless $ftindex; 
 				}	
 
    	        	my $ckey="${arkey}C${cid}";
@@ -851,7 +866,7 @@ sub al_names ($) {
 }
 
 
-sub calc_time ($$$) {
+sub calc_time ($$;$) {
 	my ($timestr,$datestr,$offset)=@_;
 
     my ($thr,$tmm,$tsec,$tfr)=split(/:/,$timestr);
