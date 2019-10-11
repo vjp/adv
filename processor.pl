@@ -209,7 +209,7 @@ for my $c (@$conf) {
      		my (undef, $ttb_ts) = calc_time($h->{'time'},$h->{'date'});
      	 	log_info ("FOUND START TTABLE ". scalar localtime ($ttb_ts));
 			my $now_ts=time;
-			my $break_day=strftime("%Y%m%d",localtime($ttb_ts));
+			my $break_day=strftime("%Y%m%d",localtime($ttb_ts+3600));
 			if ($now_ts>($ttb_ts-300) && $break_day ne $ck->{'ttday'}) {
 				$tt_day=$break_day;
 				log_warn ("need switch ttday > $tt_day");
@@ -518,6 +518,43 @@ for my $c (@$conf) {
 	}	
 
 	if ($fullttable) {
+
+		if ($ftchanges && !$need_skip) {
+			$ck->{'ttctime'}=strftime("%d.%m %H:%M",localtime());
+
+			$ck->{'ttday'}=$tt_day if $tt_day;
+			$ck->{'ttday'}=strftime("%Y%m%d",localtime(time)) unless $ck->{'ttday'};
+            
+            my $arkey="R${cp}$ck->{'ttday'}";
+
+            if ($tt_day || !$ftindex) {
+            	$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'};
+            	log_warn ("RESET TTINDEX: $arkey: $ftindex");	
+            }
+          
+            log_warn ("GENERATE FTTABLE: $arkey");
+			generate_ftt_playlist ({
+				cpath=>$cpath,
+				nowjd=>$nowjd,
+				lnum=>$ftlnum,
+				debug=>$debug,
+				debug_dir=>$debug_dir,
+				config_dir=>$config_dir,
+				cp=>$cp,
+				vicname=>$vicname,	
+				ftindex=>$ftindex,
+				ftdata=>$tk->{$arkey},
+				clfctype=>$clfctype,
+				dtkey=>$arkey,
+			});
+
+			$ck->{'ftindex'}=$ftindex;     		
+			write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
+		}	
+
+
+
+
 		print MF qq(
          <div class="column"><div class="container">
 	     <h3 style="color:#D3D3D3;" class="center gray_bkgrnd">$c->{NAME}  (FULLTABLE)</h3>
@@ -527,6 +564,9 @@ for my $c (@$conf) {
 		$VICstatus="btn-success";
 		$CLFstatus="btn-success";
 		$CLFstatus="btn-warning" if $ftchanges;
+		$SKYstatus="btn-success";
+		$SKYstatus="btn-warning" if $ftchanges;
+		
 
    		print MF qq(
 	    	<div class="center gray_bkgrnd"><div class="btn-group btn-group-justified" role="group" aria-label="...">
@@ -540,8 +580,8 @@ for my $c (@$conf) {
 	       </div></div>   
 		);
  
-		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">LAST XML: </h3>);  
-		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">LAST CLF: </h3>);  
+		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">LAST XML: $ck->{'ttday'} </h3>);  
+		print MF qq (<h3 style="color:#D3D3D3;" class="center gray_bkgrnd">LAST CLF: $ck->{'ttctime'}</h3>);  
 
     	print MF qq( 
 			<div class="card gray_bkgrnd">
@@ -597,40 +637,6 @@ for my $c (@$conf) {
 	  		</div></div>
 		);
 
-
-		if ($ftchanges && !$need_skip) {
-
-			$ck->{'ttday'}=$tt_day if $tt_day;
-			$ck->{'ttday'}=strftime("%Y%m%d",localtime(time)) unless $ck->{'ttday'};
-            
-            my $arkey="R${cp}$ck->{'ttday'}";
-
-            if ($tt_day || !$ftindex) {
-            	$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'};
-            	log_warn ("RESET TTINDEX: $arkey: $ftindex");	
-            }
-          
-            log_warn ("GENERATE FTTABLE: $arkey");
-			generate_ftt_playlist ({
-				cpath=>$cpath,
-				nowjd=>$nowjd,
-				lnum=>$ftlnum,
-				debug=>$debug,
-				debug_dir=>$debug_dir,
-				config_dir=>$config_dir,
-				cp=>$cp,
-				vicname=>$vicname,	
-				ftindex=>$ftindex,
-				ftdata=>$tk->{$arkey},
-				clfctype=>$clfctype,
-				dtkey=>$arkey,
-			});
-
-			$ck->{'ftindex'}=$ftindex;     		
-			write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
-			
-
-		}	
 
 
 	}
@@ -836,7 +842,7 @@ sub generate_ftt_playlist ($) {
         
         (my $pth,my $ptm)=split(/:/,$cf->{ftdata}->{c}->{$cid}->{VALUES}->{PTIMECODE}->{langvalue}->{rus});
         my $xtime=$tsst+$pth*3600+$ptm*60;
-		if ($xtime<$prev) {
+		if ($xtime && $xtime<$prev) {
 			$tsst+=86400; 
 			$xtime+=86400;
 		} 	
@@ -884,12 +890,12 @@ sub generate_ftt_playlist ($) {
 	}	
     print XCLF qq(</castlist>);
 	close XCLF;
-	#if ($cf->{debug}) {
-    #	my $filename=$cf->{cp}.strftime("%Y%m%d-%H%M%S_ft.clf",localtime());
-	#	copy($ffcname,"$cf->{debug_dir}/${filename}");
-	#	my $vfilename=$cf->{cp}.strftime("%Y%m%d-%H%M%S.vic",localtime());	
-	#	copy("$cf->{config_dir}/channels/${vicname}","$cf->{debug_dir}/${vfilename}");
-	#}
+	if ($cf->{debug}) {
+    	my $filename=$cf->{cp}.strftime("%Y%m%d-%H%M%S_ft.clf",localtime());
+		copy($ffcname,"$cf->{debug_dir}/${filename}");
+		my $vfilename=$cf->{cp}.strftime("%Y%m%d-%H%M%S.vic",localtime());	
+		copy("$cf->{config_dir}/channels/$cf->{vicname}","$cf->{debug_dir}/${vfilename}");
+	}
 	return $err;
 }
 
