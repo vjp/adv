@@ -110,6 +110,7 @@ for my $c (@$conf) {
 
     my @viclist;
     my @acviclist;
+    my @ftviclist;
     
     my $changes;
     my $acchanges;
@@ -234,6 +235,8 @@ for my $c (@$conf) {
          
    	        	my $ckey="${arkey}C${cid}";
 				push (@viclist,$ckey);
+				push (@ftviclist,$cid) unless $tt_break ;
+				
             	$cc->{$ckey}=read_conf("${config_dir}/containers/$ckey.json");
 				$cc->{$ckey}->{dur}=$tk->{$arkey}->{c}->{$cid}->{VALUES}->{ADVTKEEP}->{langvalue}->{rus};
 				$cc->{$ckey}->{dursec}= $tk->{$arkey}->{c}->{$cid}->{VALUES}->{ADVTKEEPDUR}->{value};
@@ -519,13 +522,40 @@ for my $c (@$conf) {
 
 	if ($fullttable) {
 
+		my $ftstr=join(';',@ftviclist);
+        my $arkey="R${cp}$ck->{'ttday'}";
+
+        #$ftstr.=";999";	
+
+		unless ($ftindex=~/$ftstr/) {
+			my %h;
+			my @final_index;
+			my $final_str;
+			for my $v (@ftviclist) {
+				$h{$v}=1;
+				push(@final_index,$v);
+			}		
+			my @ffindex=split(';',$ftindex);
+			my $f_flag;
+			for my $f (@ffindex) {
+				$f_flag=1 if $h{$f};
+				push (@final_index,$f) if !$h{$f} && $f_flag; 
+			}	
+            $final_str=join(';',@final_index);
+
+			log_warn ("COMAPRE $ftstr : $ftindex FAILED NEED REBUID TTABLE $arkey >>>> $final_str");
+			$ftindex=$final_str;
+			$ftchanges=1;
+		}
+
+
 		if ($ftchanges && !$need_skip) {
 			$ck->{'ttctime'}=strftime("%d.%m %H:%M",localtime());
 
 			$ck->{'ttday'}=$tt_day if $tt_day;
 			$ck->{'ttday'}=strftime("%Y%m%d",localtime(time)) unless $ck->{'ttday'};
             
-            my $arkey="R${cp}$ck->{'ttday'}";
+
 
             if ($tt_day || !$ftindex) {
             	$ftindex=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'INDEXSTR'}->{'langvalue'}->{'rus'};
