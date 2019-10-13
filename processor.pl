@@ -15,8 +15,9 @@ my @d=localtime;
 my $nowjd=ymd_to_cjdn($d[5]+1900,$d[4]+1,$d[3])+(($d[2]*60*60+$d[1]*60+$d[0]+20)/86400);
 
 my $debug = '';
+my $fpgen = '';
 
-GetOptions ('debug' => \$debug);
+GetOptions ('debug' => \$debug, 'fpgen' => \$fpgen);
 
 log_info ("START JDTIME=$nowjd");
 
@@ -525,9 +526,7 @@ for my $c (@$conf) {
 		my $ftstr=join(';',@ftviclist);
         my $arkey="R${cp}$ck->{'ttday'}";
 
-        #$ftstr.=";999";	
-
-		unless ($ftindex=~/$ftstr/) {
+		if (!$ftindex=~/$ftstr/ || $fpgen) {
 			my %h;
 			my @final_index;
 			my $final_str;
