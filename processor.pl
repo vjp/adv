@@ -265,6 +265,7 @@ for my $c (@$conf) {
             	my $ttsec_end=$ttsec_start+$cc->{$ckey}->{dursec} + $blockdelay;
 
 				$cc->{$ckey}->{cnouttime}=sprintf("%02d:%02d:%02d:%02d",$tt_hr,$tt_mn,$tt_ss,$sfr);
+	
 
 				my ($vm,$vd,$vy)=split(/\//,$h->{'date'});
                 
@@ -275,6 +276,8 @@ for my $c (@$conf) {
 				$cc->{$ckey}->{cnoutdate}="$rdate_y-$rdate_m-$rdate_d";
 				$cc->{$ckey}->{crealdate}=strftime("%Y-%m-%d",localtime($ts));
            
+           		$cc->{$ckey}->{ts}=$ts;
+
                 $cc->{$ckey}->{start}=$ttsec_start;
                 $cc->{$ckey}->{end}=$ttsec_end;
 
@@ -575,6 +578,7 @@ for my $c (@$conf) {
 				ftdata=>$tk->{$arkey},
 				clfctype=>$clfctype,
 				dtkey=>$arkey,
+				cc=>$cc,
 			});
 
 			$ck->{'ftindex'}=$ftindex;     		
@@ -856,6 +860,9 @@ sub generate_ftt_playlist ($) {
 	my $etime;
 
     for my $cid (@ftlist) {
+    	my $rid="$cf->{dtkey}C${cid}";
+
+    
         my $cr=0;	  
         my @reps;
         if (ref $cf->{ftdata}->{c}->{$cid}->{reps} eq 'ARRAY') {
@@ -879,12 +886,13 @@ sub generate_ftt_playlist ($) {
 		if ($xtime<$etime) {
 			$xtime=$etime+300;
 		}
-	
-        for my $rp (@reps) {
+	    for my $rp (@reps) {
 			my $k=$rp->{VALUES}->{SHNAME}->{langvalue}->{rus};
 			my $dur=$rp->{VALUES}->{REPDUR}->{value};
 			my $af=$rp->{VALUES}->{ADDFRAMES}->{value};
 			
+			$xtime=$cf->{cc}->{$rid}->{ts} if $cf->{cc}->{$rid}->{ts};
+
             my $rd=strftime("%Y-%m-%d",localtime($xtime));
             my $rt=strftime("%H:%M:%S:00",localtime($xtime));
 
