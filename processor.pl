@@ -79,6 +79,7 @@ for my $c (@$conf) {
     my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
     my $fullttable=$c->{VALUES}->{FULLTTABLE}->{value};
     my $ftlnum=$c->{VALUES}->{FTCLFLNUM}->{value};
+    my $ftversion=$c->{VALUES}->{TTVERSION}->{value};
     
 
     my $acdur=$c->{VALUES}->{ACDUR}->{value};
@@ -145,8 +146,12 @@ for my $c (@$conf) {
     if ($fullttable) {
     	$ftindex=$ck->{'ftindex'};
     	unless ($ftindex) {
-    		 log_warn ("FT NO CURRENT INDEX NEED PLAYLIST GENERATE");
-    		 $ftchanges=1;
+    		log_warn ("FT NO CURRENT INDEX NEED PLAYLIST GENERATE");
+    		$ftchanges=1;
+    	}
+    	if (!$ck->{'ftversion'} || $ftversion ne $ck->{'ftversion'}) {
+    		log_warn ("FT VERSION CHANGED  WAS:$ck->{'ftversion'} NEW:$ftversion");
+    		$ftchanges=1;
     	}
     }
 
@@ -581,7 +586,8 @@ for my $c (@$conf) {
 				cc=>$cc,
 			});
 
-			$ck->{'ftindex'}=$ftindex;     		
+			$ck->{'ftindex'}=$ftindex;
+			$ck->{'ftversion'}=$ftversion;     		
 			write_conf("${config_dir}/channels/$c->{KEY}.json",$ck);
 		}	
 
