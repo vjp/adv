@@ -533,9 +533,19 @@ for my $c (@$conf) {
 
 		my $ftstr=join(';',@ftviclist);
         my $arkey="R${cp}$ck->{'ttday'}";
+        my $vbuild;
         $tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json") unless $tk->{$arkey};
-		
-		if (!$ftindex=~/$ftstr/ || $fpgen) {
+	
+		my $ftversion=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'TTVERSION'}->{'value'};
+		if (!$ck->{'ftversion'} || $ftversion ne $ck->{'ftversion'}) {
+    		log_warn ("FT VERSION CHANGED  WAS:$ck->{'ftversion'} NEW:$ftversion");
+    		$ftchanges=1;
+    		$vbuild=1;
+    	}
+
+
+
+		if (!$ftindex=~/$ftstr/ || $fpgen || $vbuild) {
 			my %h;
 			my @final_index;
 			my $final_str;
@@ -557,11 +567,6 @@ for my $c (@$conf) {
 		}
 
  
-		my $ftversion=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'TTVERSION'}->{'value'};
-		if (!$ck->{'ftversion'} || $ftversion ne $ck->{'ftversion'}) {
-    		log_warn ("FT VERSION CHANGED  WAS:$ck->{'ftversion'} NEW:$ftversion");
-    		$ftchanges=1;
-    	}
 
 
 		if ($ftchanges && !$need_skip) {
