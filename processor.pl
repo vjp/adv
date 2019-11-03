@@ -79,7 +79,7 @@ for my $c (@$conf) {
     my $agelabel=$c->{VALUES}->{AGELABEL}->{value};
     my $fullttable=$c->{VALUES}->{FULLTTABLE}->{value};
     my $ftlnum=$c->{VALUES}->{FTCLFLNUM}->{value};
-    my $ftversion=$c->{VALUES}->{TTVERSION}->{value};
+    
     
 
     my $acdur=$c->{VALUES}->{ACDUR}->{value};
@@ -149,10 +149,7 @@ for my $c (@$conf) {
     		log_warn ("FT NO CURRENT INDEX NEED PLAYLIST GENERATE");
     		$ftchanges=1;
     	}
-    	if (!$ck->{'ftversion'} || $ftversion ne $ck->{'ftversion'}) {
-    		log_warn ("FT VERSION CHANGED  WAS:$ck->{'ftversion'} NEW:$ftversion");
-    		$ftchanges=1;
-    	}
+    	
     }
 
     my $can_start=0;
@@ -235,6 +232,9 @@ for my $c (@$conf) {
 
 			my $arkey="R${cp}${rdate_y}${rdate_m}${rdate_d}";
 			$tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json") unless $tk->{$arkey};
+
+
+			
 
             if ($tk->{$arkey}) {
 
@@ -533,7 +533,8 @@ for my $c (@$conf) {
 
 		my $ftstr=join(';',@ftviclist);
         my $arkey="R${cp}$ck->{'ttday'}";
-
+        $tk->{$arkey}=read_conf("${config_dir}/ttables/$arkey.json") unless $tk->{$arkey};
+		
 		if (!$ftindex=~/$ftstr/ || $fpgen) {
 			my %h;
 			my @final_index;
@@ -555,13 +556,20 @@ for my $c (@$conf) {
 			$ftchanges=1;
 		}
 
+ 
+		my $ftversion=$tk->{$arkey}->{'channel'}->{'VALUES'}->{'TTVERSION'}->{'value'};
+		if (!$ck->{'ftversion'} || $ftversion ne $ck->{'ftversion'}) {
+    		log_warn ("FT VERSION CHANGED  WAS:$ck->{'ftversion'} NEW:$ftversion");
+    		$ftchanges=1;
+    	}
+
 
 		if ($ftchanges && !$need_skip) {
 			$ck->{'ttctime'}=strftime("%d.%m %H:%M",localtime());
 
 			$ck->{'ttday'}=$tt_day if $tt_day;
 			$ck->{'ttday'}=strftime("%Y%m%d",localtime(time)) unless $ck->{'ttday'};
-            
+            $arkey="R${cp}$ck->{'ttday'}";
 
 
             if ($tt_day || !$ftindex) {
