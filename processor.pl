@@ -545,7 +545,7 @@ for my $c (@$conf) {
 
 
 
-		if (!$ftindex=~/$ftstr/ || $fpgen || $vbuild) {
+		if (($ftstr && $ftindex!~/$ftstr/) || $fpgen || $vbuild) {
 			my %h;
 			my @final_index;
 			my $final_str;
@@ -561,7 +561,7 @@ for my $c (@$conf) {
 			}	
             $final_str=join(';',@final_index);
 
-			log_warn ("COMAPRE $ftstr : $ftindex FAILED NEED REBUID TTABLE $arkey >>>> $final_str");
+			log_warn ("COMPARE $ftstr : $ftindex FAILED NEED REBUID TTABLE $arkey >>>> $final_str");
 			$ftindex=$final_str;
 			$ftchanges=1;
 		}
