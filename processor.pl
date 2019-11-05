@@ -113,6 +113,7 @@ for my $c (@$conf) {
     my @viclist;
     my @acviclist;
     my @ftviclist;
+    my %fth;
     
     my $changes;
     my $acchanges;
@@ -241,7 +242,10 @@ for my $c (@$conf) {
          
    	        	my $ckey="${arkey}C${cid}";
 				push (@viclist,$ckey);
-				push (@ftviclist,$cid) unless $tt_break ;
+				if (!$tt_break && !$fth{$cid}) {
+					push (@ftviclist,$cid);
+					$fth{$cid}=1;
+				}	
 				
             	$cc->{$ckey}=read_conf("${config_dir}/containers/$ckey.json");
 				$cc->{$ckey}->{dur}=$tk->{$arkey}->{c}->{$cid}->{VALUES}->{ADVTKEEP}->{langvalue}->{rus};
